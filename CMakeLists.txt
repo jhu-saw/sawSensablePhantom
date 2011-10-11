@@ -12,7 +12,7 @@
 #
 # --- end cisst license ---
 
-# To find FindStealthlink.cmake
+# To find FindSensable.cmake
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/code)
 
 find_package (Sensable REQUIRED)
