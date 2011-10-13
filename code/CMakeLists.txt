@@ -19,8 +19,9 @@ set (REQUIRED_CISST_LIBRARIES cisstCommon
                               cisstParameterTypes)
 
 find_package (cisst REQUIRED ${REQUIRED_CISST_LIBRARIES})
+find_package ( Sensable REQUIRED )
 
-if (cisst_FOUND_AS_REQUIRED)
+if (cisst_FOUND_AS_REQUIRED )
 
   # load cisst configuration
   include (${CISST_USE_FILE})
