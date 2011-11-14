@@ -25,7 +25,7 @@ if (cisst_FOUND_AS_REQUIRED)
   include (${CISST_USE_FILE})
 
   # sawSensablePhantom has been compiled within cisst, we should find it automatically
-  find_package (sawSensablePhantom REQUIRED HINTS "${CISST_BINARY_DIR}/saw/components")
+  find_package (sawSensablePhantom REQUIRED HINTS "${cisst_saw_BINARY_DIR}/saw/components")
 
   if (sawSensablePhantom_FOUND)
 
