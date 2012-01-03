@@ -26,7 +26,7 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstParameterTypes.h>
 
 // Always include last
-#include <cisstDevices/devExport.h>
+#include <sawSensablePhantom/sawSensablePhantomExport.h>
 
 // forward declaration for private data
 struct mtsSensableHDDriverData;
