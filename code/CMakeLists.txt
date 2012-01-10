@@ -1,7 +1,7 @@
 #
 # $Id$
 #
-# (C) Copyright 2011 Johns Hopkins University (JHU), All Rights
+# (C) Copyright 2011-2012 Johns Hopkins University (JHU), All Rights
 # Reserved.
 #
 # --- begin cisst license - do not edit ---
@@ -30,7 +30,7 @@ if (cisst_FOUND_AS_REQUIRED)
                mtsSensableHD.cpp
                ../mtsSensableHD.h
                )
-
+  set_property (TARGET sawSensablePhantom PROPERTY FOLDER "sawSensablePhantom")
   target_link_libraries (sawSensablePhantom ${SENSABLE_LIBRARIES})
 
   set (sawSensablePhantom_INCLUDE_DIR "${sawComponents_SOURCE_DIR}")
