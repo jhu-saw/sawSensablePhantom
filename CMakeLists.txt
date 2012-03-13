@@ -12,13 +12,7 @@
 #
 # --- end cisst license ---
 
-# To find FindSensable.cmake
-set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/code)
+project (sawSensablePhantom)
 
-find_package (Sensable REQUIRED)
-
-if (SENSABLE_FOUND)
-  include_directories (${CMAKE_CURRENT_BINARY_DIR} ${SENSABLE_INCLUDE_DIR})
-  add_subdirectory (code)
-  add_subdirectory (examples)
-endif (SENSABLE_FOUND)
+add_subdirectory (code)
+add_subdirectory (examples)
