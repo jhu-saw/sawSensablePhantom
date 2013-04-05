@@ -9,6 +9,8 @@
 #include <cisstVector.h>
 #include <cisstMultiTask.h>
 #include <cisstParameterTypes.h>
+#include <cisstParameterTypes/prmPositionJointGet.h>
+
 
 #include "displayUI.h"
 

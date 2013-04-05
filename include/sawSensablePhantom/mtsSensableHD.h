@@ -24,6 +24,7 @@ http://www.cisst.org/cisst/license.txt.
 
 #include <cisstMultiTask/mtsTaskFromCallback.h>
 #include <cisstParameterTypes.h>
+#include <cisstParameterTypes/prmPositionJointGet.h>
 
 // Always include last
 #include <sawSensablePhantom/sawSensablePhantomExport.h>
