@@ -45,16 +45,16 @@ protected:
     struct DeviceData {
         bool DeviceEnabled;
         bool ForceOutputEnabled;
-        
+
         // local copy of the buttons state as defined by Sensable
         mtsInt Buttons;
-        
+
         // local copy of the position and velocities
         prmPositionCartesianGet PositionCartesian;
         prmVelocityCartesianGet VelocityCartesian;
         prmPositionJointGet PositionJoint;
         vctDynamicVectorRef<double> GimbalJointsRef;
-        
+
         // mtsFunction called to broadcast the event
         mtsFunctionWrite Button1Event, Button2Event;
 
@@ -67,9 +67,6 @@ protected:
         vctFixedSizeConstVectorRef<double, 3, Frame4x4Type::ROWSTRIDE> Frame4x4TranslationRef;
         vctFixedSizeConstMatrixRef<double, 3, 3,
                                    Frame4x4Type::ROWSTRIDE, Frame4x4Type::COLSTRIDE> Frame4x4RotationRef;
-        
-        // added to provide tip position to the frame manager
-        mtsFunctionRead PositionFunctionForTransformationManager;
 
         bool Clutch;
 

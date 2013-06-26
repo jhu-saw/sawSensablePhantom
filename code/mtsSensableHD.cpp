@@ -7,7 +7,7 @@
   Author(s): Anton Deguet
   Created on: 2008-04-04
 
-  (C) Copyright 2008-2011 Johns Hopkins University (JHU), All Rights
+  (C) Copyright 2008-2013 Johns Hopkins University (JHU), All Rights
   Reserved.
 
 --- begin cisst license - do not edit ---
@@ -78,9 +78,7 @@ void mtsSensableHD::Run(void)
         hdGetIntegerv(HD_CURRENT_BUTTONS, &currentButtons);
 
         // apply forces
-       // deviceData->ForceCartesian.Force().Y() += 0.784;
-        if(deviceData->ForceOutputEnabled)
-        {
+        if (deviceData->ForceOutputEnabled) {
             hdSetDoublev(HD_CURRENT_FORCE, deviceData->ForceCartesian.Force().Pointer());
         }
         // end haptics frame
@@ -316,18 +314,6 @@ void mtsSensableHD::SetupInterfaces(void)
         // add a method to read the current state index
         providedInterface->AddCommandRead(&mtsStateTable::GetIndexReader, &StateTable,
                                           "GetStateIndex");
-        
-        // adds frames to transformation manager
-        deviceData->PositionCartesian.ReferenceFrame() =
-            new prmTransformationFixed(interfaceName + "Base",
-                                       vctFrm3::Identity(),
-                                       &prmTransformationManager::TheWorld);
-        deviceData->PositionFunctionForTransformationManager.Bind(providedInterface
-                                                                      ->GetCommandRead("GetPositionCartesian"));
-        deviceData->PositionCartesian.MovingFrame() =
-            new prmTransformationDynamic(interfaceName + "Tip",
-                                         deviceData->PositionFunctionForTransformationManager,
-                                         deviceData->PositionCartesian.ReferenceFrame());
         
         // Add interfaces for button with events
         providedInterface = this->AddInterfaceProvided(interfaceName + "Button1");

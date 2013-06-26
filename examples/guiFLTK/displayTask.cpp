@@ -1,7 +1,22 @@
 /* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-    */
 /* ex: set filetype=cpp softtabstop=4 shiftwidth=4 tabstop=4 cindent expandtab: */
-/* $Id$ */
+/*
+  $Id$
 
+  Author(s):  Anton Deguet, Peter Kazanzides 
+  Created on: 2008-04-08
+
+  (C) Copyright 2008 Johns Hopkins University (JHU), All Rights
+  Reserved.
+
+--- begin cisst license - do not edit ---
+
+This software is provided "as is" under an open source license, with
+no warranty.  The complete license can be found in license.txt and
+http://www.cisst.org/cisst/license.txt.
+
+--- end cisst license ---
+*/
 
 #include "displayTask.h"
 #include "displayUI.h"
@@ -45,15 +60,6 @@ void displayTask::Startup(void)
     mtsInterfaceRequired * requiredInterface = this->GetInterfaceRequired("Robot");
     // make sure an interface has been connected
     if (requiredInterface) {
-        // get a pointer on tip node --- name is hardcoded, bad, need a way to query all possible names
-        // from the interface
-        this->TipTransformationPointer = prmTransformationManager::GetTransformationNodePtr("OmniTip");
-        this->BaseTransformationPointer = prmTransformationManager::GetTransformationNodePtr("OmniBase");
-        // add reference frame to transformation manager
-        this->ReferenceTransformationPointer =
-            new prmTransformationFixed("Reference",
-                                       vctFrm3::Identity(),
-                                       this->BaseTransformationPointer);
         // see if the commands have been found
         this->DeviceProvidesCartesianVelocity = GetCartesianVelocity.IsValid();
         this->DeviceProvidesJointPosition = GetJointPosition.IsValid();
@@ -93,14 +99,6 @@ void displayTask::Run(void)
     UI.X->value(CartesianPosition.Position().Translation().X());
     UI.Y->value(CartesianPosition.Position().Translation().Y());
     UI.Z->value(CartesianPosition.Position().Translation().Z());
-    // get the position with respect to the latest set reference
-    if (this->TipTransformationPointer != 0) {
-        this->TipWrtReference = prmWRTReference(this->TipTransformationPointer,
-                                                this->ReferenceTransformationPointer);
-        UI.DeltaX->value(TipWrtReference.Translation().X());
-        UI.DeltaY->value(TipWrtReference.Translation().Y());
-        UI.DeltaZ->value(TipWrtReference.Translation().Z());
-    }
     if (this->DeviceProvidesCartesianVelocity) {
         GetCartesianVelocity(CartesianVelocity);
         UI.VelocityX->value(CartesianVelocity.VelocityLinear().X());
@@ -110,14 +108,6 @@ void displayTask::Run(void)
     if (this->DeviceProvidesJointPosition) {
         GetJointPosition(JointPosition);
         UI.Positions->value(JointPosition.Position().ToString().c_str());
-    }
-    // test if we need to update the reference frame
-    if (UI.NewReference) {
-        vctFrm3 newReference;
-        newReference = prmWRTReference(this->TipTransformationPointer,
-                                       this->BaseTransformationPointer);
-        this->ReferenceTransformationPointer->SetTransformation(newReference);
-        UI.NewReference = false;
     }
     // log some extra information
     CMN_LOG_CLASS_RUN_WARNING << "Run : " << now.Ticks()
@@ -131,34 +121,17 @@ void displayTask::Run(void)
 void displayTask::Button1EventHandler(const prmEventButton & buttonEvent)
 {
     if (buttonEvent.Type() == prmEventButton::PRESSED) {
-        UI.Button_1->value(true);
+        UI.Button1->value(true);
     } else {
-        UI.Button_1->value(false);
+        UI.Button1->value(false);
     }
 }
 
 void displayTask::Button2EventHandler(const prmEventButton & buttonEvent)
 {
     if (buttonEvent.Type() == prmEventButton::PRESSED) {
-        UI.Button_2->value(true);
+        UI.Button2->value(true);
     } else {
-        UI.Button_2->value(false);
+        UI.Button2->value(false);
     }
 }
-
-/*
-  Author(s):  Anton Deguet, Peter Kazanzides 
-  Created on: 2008-04-08
-
-  (C) Copyright 2008 Johns Hopkins University (JHU), All Rights
-  Reserved.
-
---- begin cisst license - do not edit ---
-
-This software is provided "as is" under an open source license, with
-no warranty.  The complete license can be found in license.txt and
-http://www.cisst.org/cisst/license.txt.
-
---- end cisst license ---
-
-*/

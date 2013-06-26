@@ -1,5 +1,5 @@
 # data file for the Fltk User Interface Designer (fluid)
-version 1.0300 
+version 1.0302 
 header_name {.h} 
 code_name {.cxx}
 class displayUI {open
@@ -8,12 +8,12 @@ class displayUI {open
   } {
     Fl_Window DisplayWindow {
       label DisplayWindow open
-      xywh {420 401 571 399} type Double hide
+      xywh {607 649 571 237} type Double visible
     } {
       Fl_Return_Button Close {
         label Close
-        callback {DisplayWindow->hide();}
-        xywh {475 360 75 25} box THIN_UP_BOX
+        callback {DisplayWindow->hide();} selected
+        xywh {475 190 75 25} box THIN_UP_BOX
       }
       Fl_Group Cartesian {
         label Cartesian open
@@ -48,12 +48,12 @@ class displayUI {open
         label Buttons open
         xywh {290 25 240 90}
       } {
-        Fl_Check_Button Button_1 {
+        Fl_Check_Button Button1 {
           label {Button 1}
           xywh {395 35 25 25} down_box THIN_DOWN_BOX align 4
         }
-        Fl_Check_Button Button_2 {
-          label {Button 2} selected
+        Fl_Check_Button Button2 {
+          label {Button 2}
           xywh {395 60 25 25} down_box THIN_DOWN_BOX align 4
         }
       }
@@ -64,28 +64,6 @@ class displayUI {open
         Fl_Output Positions {
           label {Positions:}
           xywh {20 146 530 24} box THIN_DOWN_BOX align 5 textsize 12
-        }
-      }
-      Fl_Group {} {
-        label {WRT last Set Position} open
-        xywh {20 200 530 90}
-      } {
-        Fl_Value_Output DeltaX {
-          label {X:}
-          xywh {45 215 65 25} box THIN_DOWN_BOX
-        }
-        Fl_Value_Output DeltaY {
-          label {Y:}
-          xywh {130 215 65 25} box THIN_DOWN_BOX
-        }
-        Fl_Value_Output DeltaZ {
-          label {Z:}
-          xywh {215 215 65 25} box THIN_DOWN_BOX
-        }
-        Fl_Return_Button SetReferenceButton {
-          label {Set new reference frame}
-          callback {this->NewReference = true;}
-          xywh {300 215 210 25} box THIN_UP_BOX
         }
       }
     }
