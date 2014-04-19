@@ -138,10 +138,10 @@ if ("${CMAKE_SYSTEM}" MATCHES "Linux")
   if (SENSABLE_DIR)
     set(SENSABLE_INCLUDE_DIR ${SENSABLE_DIR}/include)
     set(SENSABLE_FOUND true)
-    find_library (SENSABLE_LIB_HD HD  ${SENSABLE_DIR}/lib)
-    find_library (SENSABLE_LIB_HDU HDU  ${SENSABLE_DIR}/lib)
-    find_library (SENSABLE_LIB_HL HL  ${SENSABLE_DIR}/lib)
-    find_library (SENSABLE_LIB_HLU HLU  ${SENSABLE_DIR}/lib)
+    find_library (SENSABLE_LIB_HD HD  ${SENSABLE_DIR}/lib ${SENSABLE_DIR}/lib64)
+    find_library (SENSABLE_LIB_HDU HDU  ${SENSABLE_DIR}/lib ${SENSABLE_DIR}/lib64)
+    find_library (SENSABLE_LIB_HL HL  ${SENSABLE_DIR}/lib ${SENSABLE_DIR}/lib64)
+    find_library (SENSABLE_LIB_HLU HLU  ${SENSABLE_DIR}/lib ${SENSABLE_DIR}/lib64)
 
     set (SENSABLE_LIBRARIES
          ${SENSABLE_LIB_HD}
