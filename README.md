@@ -4,9 +4,9 @@
 # 3DS USB Touch on Linux
 
 Tested on Ubuntu 16.04
-- Ubuntu 16.04 (I also tried a 14.04 VM)
-- geomagic_touch_device_driver_2016.1-1-amd64
-- openhaptics_3.4-0-developer-edition-amd64
+ * Ubuntu 16.04 (I also tried a 14.04 VM)
+ * geomagic_touch_device_driver_2016.1-1-amd64
+ * openhaptics_3.4-0-developer-edition-amd64
 
 ## Testing that the device is connected
 
@@ -44,19 +44,22 @@ sudo adduser <user-id> dialout
 ```
 The adduser command will be effective after next login.
 
+## Installing the drivers
+
+The file to use is geomagic_touch_device_driver_2016.1-1-amd64.tgz.  Extract and then run the install.sh as sudo.
+
+After the install, some cleanup is required:
+ * edit the file `/etc/profile.d/geomagic.sh`, comment out the last two exports (`LD_LIBRARY_PATH` and `QT_PLUGIN_PATH`).  Qt 5 should be installed using Ubuntu packages.
+ * In the directory `/opt/geomagic_touch_device_drivers`
+   * `rm -r lib`
+   * `chmod 755 .`
+   * `chmod 755 *`
+   * `chmod 777 config`.  That's not ideal but this will allow users to create new configurations.
+   * `chmod 644 */*`
+
 
 ```
-TO BE CLEANED UP
-(which I am a member of). I nevertheless chmod the ttyACM0 to 777. So far so good but when I start " /opt/geomagic_touch_device_driver/Geomagic_Touch_Setup" (without sudo), I get "Device Serial Num: No USB device available". Device Model is "Touch", Interface is "USB Port" and Port Num is "/dev/ttyACM0".
-I poked around a bit and everything seems fine, i.e. my environment variables have:
-
-OH_SDK_BASE=/opt/OpenHaptics/Developer/3.4-0
-GTDD_HOME=/opt/geomagic_touch_device_driver
-OH_SDK_BASE=/opt/OpenHaptics/Developer/3.4-0
-
 On a 16.04 machine, we had slightly better results by simply plugging the USB cable on the back of our PC. Said PC is a bit old (Dell Optiplex 990) and it seems that not all USB ports are equal. Using a different port we were able to detect the Touch and get a model/serial number using the Setup application. When running the Diagnostic application as well as the deviceQuery example, it seems that the "driver" is able to read a single sample from the USB and the data doesn't get refreshed afterwards. We'll investigate on a faster machine, maybe just a CPU/bandwidth issue.
 
 On a 14.04 host, we were able to run the Setup and Diagnostic application without any issue. A couple of comments though:
-
-The libraries copied in /opt/geomagic_touch_device_drivers might conflict with updated libraries. In our case, we have a fair amount of Qt5 code that uses an updated version of Qt5. Since the installer modifies the LD_LIBRARY_PATH for the whole system, that lead to unresolved symbols. To solve this, you can either remove/comment the LD_LIBRARY_PATH in /etc/profile.d/geomagic.sh or remove all the libraries in /opt/geomagic_touch_device_drivers/lib.
 ```
