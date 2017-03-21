@@ -6,7 +6,6 @@
 Tested on Ubuntu 16.04
  * Ubuntu 16.04 (I also tried a 14.04 VM)
  * geomagic_touch_device_driver_2016.1-1-amd64
- * openhaptics_3.4-0-developer-edition-amd64
 
 ## Testing that the device is connected
 
@@ -38,15 +37,15 @@ Bus 002 Device 002: ID 8087:0024 Intel Corp. Integrated Rate Matching Hub
 
 The device handle should properly created as "/dev/ttyACM0".
 
-Permissions by default grant read/write access to user root and group dialout.  To add a user to the dialout group:
+Permissions by default grant read/write access to user root and group dialout.   DO NOT use the recommended `chmod 777` on the device node as recommended in the install manual, you will have to do this as root/su after each reboot and each time you unplug the device. Instead, add your users to the dialout group:
 ```
 sudo adduser <user-id> dialout
 ```
-The adduser command will be effective after next login.
+The `adduser` command will be effective after next login.
 
 ## Installing the drivers
 
-The file to use is geomagic_touch_device_driver_2016.1-1-amd64.tgz.  Extract and then run the install.sh as sudo.
+The file to use is geomagic_touch_device_driver_2016.1-1-amd64.tgz. Extract and then run the install.sh as sudo.
 
 After the install, some cleanup is required:
  * edit the file `/etc/profile.d/geomagic.sh`, comment out the last two exports (`LD_LIBRARY_PATH` and `QT_PLUGIN_PATH`).  Qt 5 should be installed using Ubuntu packages.
@@ -57,9 +56,8 @@ After the install, some cleanup is required:
    * `chmod 777 config`.  That's not ideal but this will allow users to create new configurations.
    * `chmod 644 */*`
 
+On a 16.04 machine, we had slightly better results by simply plugging the USB cable on the back of our PC. Said PC is a bit old (Dell Optiplex 990) and it seems that not all USB ports are equal. Using a different port we were able to detect the Touch and get a model/serial number using the Setup application. When running the Diagnostic application as well as the deviceQuery example, it seems that the "driver" is sometimes able to read a single sample from the USB but the data doesn't get refreshed afterwards.
 
-```
-On a 16.04 machine, we had slightly better results by simply plugging the USB cable on the back of our PC. Said PC is a bit old (Dell Optiplex 990) and it seems that not all USB ports are equal. Using a different port we were able to detect the Touch and get a model/serial number using the Setup application. When running the Diagnostic application as well as the deviceQuery example, it seems that the "driver" is able to read a single sample from the USB and the data doesn't get refreshed afterwards. We'll investigate on a faster machine, maybe just a CPU/bandwidth issue.
+On a 14.04 host, we were able to run the Setup and Diagnostic application without any issue.
 
-On a 14.04 host, we were able to run the Setup and Diagnostic application without any issue. A couple of comments though:
-```
+Please note that the cisst/SAW component doesn't use OpenHaptics.
