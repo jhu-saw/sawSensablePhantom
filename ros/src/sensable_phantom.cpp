@@ -20,8 +20,7 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstCommon/cmnUnits.h>
 #include <cisstCommon/cmnCommandLineOptions.h>
 #include <cisstMultiTask/mtsTaskManager.h>
-#include <cisstMultiTask/mtsMessageQtWidget.h>
-#include <cisstMultiTask/mtsIntervalStatisticsQtWidget.h>
+#include <cisstMultiTask/mtsSystemQtWidget.h>
 #include <sawSensablePhantom/mtsSensableHD.h>
 
 #include <ros/ros.h>
@@ -134,21 +133,13 @@ int main(int argc, char * argv[])
 
         // Qt Widgets
         // logs
-        mtsMessageQtWidgetComponent * messageWidget
-            = new mtsMessageQtWidgetComponent("Sensable-" + name + "-Messages");
-        messageWidget->Configure();
-        componentManager->AddComponent(messageWidget);
-        componentManager->Connect(messageWidget->GetName(), "Component",
+        mtsSystemQtWidgetComponent * systemWidget
+            = new mtsSystemQtWidgetComponent("Sensable-" + name + "-System");
+        systemWidget->Configure();
+        componentManager->AddComponent(systemWidget);
+        componentManager->Connect(systemWidget->GetName(), "Component",
                                   device->GetName(), name);
-        tabWidget->addTab(messageWidget, QString(name.c_str()) + " logs");
-
-        mtsIntervalStatisticsQtWidgetComponent * timeWidget
-            = new mtsIntervalStatisticsQtWidgetComponent("Sensable-" + name + "-Timing");
-        timeWidget->Configure();
-        componentManager->AddComponent(timeWidget);
-        componentManager->Connect(timeWidget->GetName(), "Component",
-                                  device->GetName(), name);
-        tabWidget->addTab(timeWidget, QString(name.c_str()) + " timing");
+        tabWidget->addTab(systemWidget, QString(name.c_str()) + " logs");
     }
 
     // create and start all components
