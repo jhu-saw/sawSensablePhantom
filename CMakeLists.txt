@@ -1,7 +1,5 @@
 #
-#
-# (C) Copyright 2011 Johns Hopkins University (JHU), All Rights
-# Reserved.
+# (C) Copyright 2011 Johns Hopkins University (JHU), All Rights Reserved.
 #
 # --- begin cisst license - do not edit ---
 #
@@ -11,7 +9,9 @@
 #
 # --- end cisst license ---
 
-project (sawSensablePhantom)
+project (sawSensablePhantomAll)
 
-add_subdirectory (code)
+cmake_minimum_required (VERSION 2.8)
+
+add_subdirectory (components)
 add_subdirectory (examples)
