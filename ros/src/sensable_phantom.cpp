@@ -21,6 +21,7 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstCommon/cmnCommandLineOptions.h>
 #include <cisstMultiTask/mtsTaskManager.h>
 #include <cisstMultiTask/mtsSystemQtWidget.h>
+#include <cisstParameterTypes/prmEventButtonQtWidget.h>
 #include <sawSensablePhantom/mtsSensableHD.h>
 
 #include <ros/ros.h>
@@ -132,14 +133,26 @@ int main(int argc, char * argv[])
                                   device->GetName(), name + "Button2");
 
         // Qt Widgets
-        // logs
+        // buttons
+        prmEventButtonQtWidgetComponent * buttonsWidget
+            = new prmEventButtonQtWidgetComponent("Sensable-" + name + "-ButtonsWidget");
+        buttonsWidget->AddEventButton(name + "Button1");
+        buttonsWidget->AddEventButton(name + "Button2");
+        componentManager->AddComponent(buttonsWidget);
+        componentManager->Connect(buttonsWidget->GetName(), name + "Button1",
+                                  device->GetName(), name + "Button1");
+        componentManager->Connect(buttonsWidget->GetName(), name + "Button2",
+                                  device->GetName(), name + "Button2");
+        tabWidget->addTab(buttonsWidget, QString(name.c_str()) + " buttons");
+        
+        // system info (timing and messages)
         mtsSystemQtWidgetComponent * systemWidget
-            = new mtsSystemQtWidgetComponent("Sensable-" + name + "-System");
+            = new mtsSystemQtWidgetComponent("Sensable-" + name + "-SystemWidget");
         systemWidget->Configure();
         componentManager->AddComponent(systemWidget);
         componentManager->Connect(systemWidget->GetName(), "Component",
                                   device->GetName(), name);
-        tabWidget->addTab(systemWidget, QString(name.c_str()) + " logs");
+        tabWidget->addTab(systemWidget, QString(name.c_str()) + " system");
     }
 
     // create and start all components
