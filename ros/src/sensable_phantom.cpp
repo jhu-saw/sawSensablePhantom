@@ -22,6 +22,7 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstMultiTask/mtsTaskManager.h>
 #include <cisstMultiTask/mtsSystemQtWidget.h>
 #include <cisstParameterTypes/prmEventButtonQtWidget.h>
+#include <cisstParameterTypes/prmStateRobotQtWidget.h>
 #include <sawSensablePhantom/mtsSensableHD.h>
 
 #include <ros/ros.h>
@@ -133,6 +134,16 @@ int main(int argc, char * argv[])
                                   device->GetName(), name + "Button2");
 
         // Qt Widgets
+        
+        // state (joint & cartesian
+        prmStateRobotQtWidgetComponent * stateWidget
+            = new prmStateRobotQtWidgetComponent("Sensable-" + name + "-StateWidget");
+        stateWidget->Configure();
+        componentManager->AddComponent(stateWidget);
+        componentManager->Connect(stateWidget->GetName(), "Component",
+                                  device->GetName(), name);
+        tabWidget->addTab(stateWidget, QString(name.c_str()) + " state");
+
         // buttons
         prmEventButtonQtWidgetComponent * buttonsWidget
             = new prmEventButtonQtWidgetComponent("Sensable-" + name + "-ButtonsWidget");
