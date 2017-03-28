@@ -111,7 +111,7 @@ if (cisst_FOUND_AS_REQUIRED)
              DESTINATION "${CISST_CMAKE_INSTALL_SUFFIX}/saw")
 
   else (SENSABLE_FOUND)
-    message (SEND_ERROR "code in ${CMAKE_CURRENT_SOURCE_DIR} requires Sensable.")
+    message ("Information: code in ${CMAKE_CURRENT_SOURCE_DIR} requires Sensable.")
   endif (SENSABLE_FOUND)
 
 else (cisst_FOUND_AS_REQUIRED)
