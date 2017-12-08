@@ -31,60 +31,25 @@ http://www.cisst.org/cisst/license.txt.
 // forward declaration for private data
 struct mtsSensableHDDriverData;
 struct mtsSensableHDHandle;
+class mtsSensableHDDevice;
 
 class CISST_EXPORT mtsSensableHD: public mtsTaskFromCallbackAdapter {
-    CMN_DECLARE_SERVICES(CMN_NO_DYNAMIC_CREATION, CMN_LOG_ALLOW_DEFAULT);
+    CMN_DECLARE_SERVICES(CMN_DYNAMIC_CREATION_ONEARG, CMN_LOG_ALLOW_DEFAULT);
 
 public:
     enum {NB_JOINTS = 6};
-    int DeviceCount;
 
-protected:
-    // internal data using Sensable data types
-    struct DeviceData {
-        mtsInterfaceProvided * Interface;
-
-        bool DeviceEnabled;
-        bool ForceOutputEnabled;
-
-        // local copy of the buttons state as defined by Sensable
-        int Buttons;
-
-        // local copy of the position and velocities
-        prmPositionCartesianGet PositionCartesian;
-        prmVelocityCartesianGet VelocityCartesian;
-        prmStateJoint StateJoint;
-        vctDynamicVectorRef<double> GimbalPositionJointRef, GimbalEffortJointRef;
-
-        // mtsFunction called to broadcast the event
-        mtsFunctionWrite Button1Event, Button2Event;
-
-        prmForceCartesianSet ForceCartesian;
-
-        // local buffer used to store the position as provided
-        // by Sensable
-        typedef vctFixedSizeMatrix<double, 4, 4, VCT_COL_MAJOR> Frame4x4Type;
-        Frame4x4Type Frame4x4;
-        vctFixedSizeConstVectorRef<double, 3, Frame4x4Type::ROWSTRIDE> Frame4x4TranslationRef;
-        vctFixedSizeConstMatrixRef<double, 3, 3,
-                                   Frame4x4Type::ROWSTRIDE, Frame4x4Type::COLSTRIDE> Frame4x4RotationRef;
-
-        bool Clutch;
-
-        std::string Name;
-
-        int DeviceNumber;
-    };
-
-    vctDynamicVector<DeviceData *> DevicesVector;
-    vctDynamicVector<mtsSensableHDHandle *> DevicesHandleVector;
-    mtsSensableHDDriverData * Driver;
-    void SetupInterfaces(void);
-
-public:
     /*! Default constructor, will use the default device connected and
       create and interface named "Default Arm" */
-    mtsSensableHD(const std::string & componentName);
+    inline mtsSensableHD(const std::string & componentName):
+        mtsTaskFromCallbackAdapter(componentName, 5000)
+    {
+    }
+        
+    inline mtsSensableHD(const mtsTaskConstructorArg & arg):
+        mtsTaskFromCallbackAdapter(arg)
+    {
+    }
 
     ~mtsSensableHD();
     void Configure(const std::string & filename = "");
@@ -95,6 +60,16 @@ public:
     void Cleanup(void) {};
 
     std::vector<std::string> DeviceNames(void) const;
+    int DeviceCount;
+
+protected:
+
+    typedef std::vector<mtsSensableHDDevice *> DevicesType;
+    DevicesType mDevices;
+    typedef std::vector<mtsSensableHDHandle *> HandlesType;
+    HandlesType mHandles;
+    mtsSensableHDDriverData * mDriver;
+    void SetupInterfaces(void);
 };
 
 CMN_DECLARE_SERVICES_INSTANTIATION(mtsSensableHD);
