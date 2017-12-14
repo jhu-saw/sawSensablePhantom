@@ -172,6 +172,11 @@ void mtsSensableHD::Run(void)
             // save previous buttons state
             device->Buttons = currentButtons;
         }
+
+        // set all as valid
+        device->StateJoint.Valid() = true;
+        device->PositionCartesian.Valid() = true;
+        device->VelocityCartesian.Valid() = true;
     }
 
     // check for errors and abort the callback if a scheduler error
@@ -182,6 +187,10 @@ void mtsSensableHD::Run(void)
         // propagate error to all devices interfaces
         for (size_t index = 0; index != nbDevices; index++) {
             device = mDevices.at(index);
+            // set all as invalid
+            device->StateJoint.Valid() = false;
+            device->PositionCartesian.Valid() = false;
+            device->VelocityCartesian.Valid() = false;
             device->Interface->SendError(device->Name + ": fatal error in scheduler callback \""
                                          + hdGetErrorString(error.errorCode) + "\"");
         }
@@ -268,6 +277,9 @@ void mtsSensableHD::SetupInterfaces(void)
         device->StateJoint.Effort().SetSize(NB_JOINTS);
         device->GimbalEffortJointRef.SetRef(device->StateJoint.Effort(), 3, 3);
 
+        device->PositionCartesian.Valid() = false;
+        device->PositionCartesian.SetReferenceFrame(device->Name + "_base");
+        device->PositionCartesian.SetMovingFrame(device->Name);
         // set to zero
         device->StateJoint.Position().SetAll(0.0);
         device->StateJoint.Effort().SetAll(0.0);
