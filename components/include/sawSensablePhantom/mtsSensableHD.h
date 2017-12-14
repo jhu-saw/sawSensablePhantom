@@ -20,10 +20,6 @@ http://www.cisst.org/cisst/license.txt.
 #define _mtsSensableHD_h
 
 #include <cisstMultiTask/mtsTaskFromCallback.h>
-#include <cisstParameterTypes/prmPositionCartesianGet.h>
-#include <cisstParameterTypes/prmVelocityCartesianGet.h>
-#include <cisstParameterTypes/prmStateJoint.h>
-#include <cisstParameterTypes/prmForceCartesianSet.h>
 
 // Always include last
 #include <sawSensablePhantom/sawSensablePhantomExport.h>
@@ -45,7 +41,7 @@ public:
         mtsTaskFromCallbackAdapter(componentName, 5000)
     {
     }
-        
+
     inline mtsSensableHD(const mtsTaskConstructorArg & arg):
         mtsTaskFromCallbackAdapter(arg)
     {

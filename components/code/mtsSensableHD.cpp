@@ -27,6 +27,11 @@ http://www.cisst.org/cisst/license.txt.
 
 #include <cisstCommon/cmnUnits.h>
 #include <cisstMultiTask/mtsInterfaceProvided.h>
+#include <cisstParameterTypes/prmPositionCartesianGet.h>
+#include <cisstParameterTypes/prmVelocityCartesianGet.h>
+#include <cisstParameterTypes/prmStateJoint.h>
+#include <cisstParameterTypes/prmForceCartesianSet.h>
+#include <cisstParameterTypes/prmPositionCartesianSet.h>
 #include <cisstParameterTypes/prmEventButton.h>
 
 CMN_IMPLEMENT_SERVICES_DERIVED_ONEARG(mtsSensableHD, mtsTaskFromCallback, mtsTaskConstructorArg);
@@ -49,13 +54,20 @@ public:
     }
     inline void GetCurrentState(std::string & state) const {
     }
-    void SetPositionCartesian(const prmForceCartesianSet & desiredForceTorque);
-    void SetPositionGoalCartesian(const prmPositionCartesianSet & newPosition);
-    void SetWrenchBody(const prmForceCartesianSet & newForce);
-    void SetGravityCompensation(const bool & gravityCompensation);
-    void LockOrientation(const vctMatRot3 & orientation);
-    void UnlockOrientation(void);
-    void Freeze(void);
+    inline void SetPositionCartesian(const prmForceCartesianSet & desiredForceTorque) {
+    }
+    inline void SetPositionGoalCartesian(const prmPositionCartesianSet & newPosition) {
+    }
+    inline void SetWrenchBody(const prmForceCartesianSet & newForce) {
+    }
+    inline void SetGravityCompensation(const bool & gravityCompensation) {
+    }
+    inline void LockOrientation(const vctMatRot3 & orientation) {
+    }
+    inline void UnlockOrientation(void) {
+    }
+    inline void Freeze(void) {
+    }
 
     mtsInterfaceProvided * Interface;
 
@@ -66,9 +78,9 @@ public:
     int Buttons;
 
     // local copy of the position and velocities
-    prmPositionCartesianGet PositionCartesian;
+    prmPositionCartesianGet PositionCartesian, PositionCartesianDesired;
     prmVelocityCartesianGet VelocityCartesian;
-    prmStateJoint StateJoint;
+    prmStateJoint StateJoint, StateGripper;
     vctDynamicVectorRef<double> GimbalPositionJointRef, GimbalEffortJointRef;
 
     // mtsFunction called to broadcast the event
@@ -276,6 +288,8 @@ void mtsSensableHD::SetupInterfaces(void)
         device->GimbalPositionJointRef.SetRef(device->StateJoint.Position(), 3, 3);
         device->StateJoint.Effort().SetSize(NB_JOINTS);
         device->GimbalEffortJointRef.SetRef(device->StateJoint.Effort(), 3, 3);
+        device->StateGripper.Position().SetSize(1);
+        device->StateGripper.Position().at(0) = 0.0;
 
         device->PositionCartesian.Valid() = false;
         device->PositionCartesian.SetReferenceFrame(device->Name + "_base");
@@ -289,50 +303,62 @@ void mtsSensableHD::SetupInterfaces(void)
 
         // create interface with the device name, i.e. the map key
         CMN_LOG_CLASS_INIT_DEBUG << "SetupInterfaces: creating interface \"" << interfaceName << "\"" << std::endl;
-        device->Interface = this->AddInterfaceProvided(interfaceName);
+        mtsInterfaceProvided * _interface = this->AddInterfaceProvided(interfaceName);
+        device->Interface = _interface;
 
         // for Status, Warning and Error with mtsMessage
-        device->Interface->AddMessageEvents();
-
-        // Stats
-        device->Interface->AddCommandReadState(this->StateTable, StateTable.PeriodStats,
-                                               "GetPeriodStatistics");
-
-        // robot State
-        device->Interface->AddCommandWrite(&mtsSensableHDDevice::SetDesiredState,
-                                           device, "SetDesiredState", std::string(""));
-        device->Interface->AddCommandRead(&mtsSensableHDDevice::GetDesiredState,
-                                          device, "GetDesiredState", std::string(""));
-        device->Interface->AddCommandRead(&mtsSensableHDDevice::GetCurrentState,
-                                          device, "GetCurrentState", std::string(""));
+        _interface->AddMessageEvents();
 
         // add the state data to the table
         this->StateTable.AddData(device->PositionCartesian, interfaceName + "PositionCartesian");
+        this->StateTable.AddData(device->PositionCartesianDesired, interfaceName + "PositionCartesianDesired");
         this->StateTable.AddData(device->VelocityCartesian, interfaceName + "VelocityCartesian");
         this->StateTable.AddData(device->StateJoint, interfaceName + "StateJoint");
+        this->StateTable.AddData(device->StateGripper, interfaceName + "StateGripper");
+        this->StateTable.AddData(device->ForceCartesian, interfaceName + "ForceCartesian");
         this->StateTable.AddData(device->Buttons, interfaceName + "Buttons");
 
-        if (device->ForceOutputEnabled) {
-            this->StateTable.AddData(device->ForceCartesian, interfaceName + "ForceCartesian");
-            device->Interface->AddCommandWriteState(this->StateTable,
-                                                    device->ForceCartesian,
-                                                    "SetWrenchBody");
-        }
-
         // provide read methods for state data
-        device->Interface->AddCommandReadState(this->StateTable,
-                                               device->PositionCartesian,
-                                               "GetPositionCartesian");
-        device->Interface->AddCommandReadState(this->StateTable,
-                                               device->VelocityCartesian,
-                                               "GetVelocityCartesian");
-        device->Interface->AddCommandReadState(this->StateTable,
-                                               device->StateJoint,
-                                               "GetStateJoint");
+        _interface->AddCommandReadState(this->StateTable, device->PositionCartesian,
+                                        "GetPositionCartesian");
+        _interface->AddCommandReadState(this->StateTable, device->PositionCartesianDesired,
+                                        "GetPositionCartesianDesired");
+        _interface->AddCommandReadState(this->StateTable, device->VelocityCartesian,
+                                        "GetVelocityCartesian");
+        _interface->AddCommandReadState(this->StateTable, device->StateJoint,
+                                        "GetStateJoint");
+        _interface->AddCommandReadState(this->StateTable, device->StateGripper,
+                                        "GetStateGripper");
+
+        // commands
+        _interface->AddCommandWrite(&mtsSensableHDDevice::SetPositionGoalCartesian,
+                                    device, "SetPositionGoalCartesian");
+        _interface->AddCommandWrite(&mtsSensableHDDevice::SetWrenchBody,
+                                    device, "SetWrenchBody");
+        _interface->AddCommandWrite(&mtsSensableHDDevice::SetGravityCompensation,
+                                    device, "SetGravityCompensation");
+        _interface->AddCommandWrite(&mtsSensableHDDevice::LockOrientation,
+                                    device, "LockOrientation");
+        _interface->AddCommandVoid(&mtsSensableHDDevice::UnlockOrientation,
+                                   device, "UnlockOrientation");
+        _interface->AddCommandVoid(&mtsSensableHDDevice::Freeze,
+                                   device, "Freeze");
 
         // add a method to read the current state index
-        device->Interface->AddCommandRead(&mtsStateTable::GetIndexReader, &StateTable,
+        _interface->AddCommandRead(&mtsStateTable::GetIndexReader, &StateTable,
                                           "GetStateIndex");
+
+        // Stats
+        _interface->AddCommandReadState(this->StateTable, StateTable.PeriodStats,
+                                               "GetPeriodStatistics");
+
+        // robot State
+        _interface->AddCommandWrite(&mtsSensableHDDevice::SetDesiredState,
+                                           device, "SetDesiredState", std::string(""));
+        _interface->AddCommandRead(&mtsSensableHDDevice::GetDesiredState,
+                                          device, "GetDesiredState", std::string(""));
+        _interface->AddCommandRead(&mtsSensableHDDevice::GetCurrentState,
+                                          device, "GetCurrentState", std::string(""));
 
         // Add interfaces for button with events
         providedInterface = this->AddInterfaceProvided(interfaceName + "Button1");
