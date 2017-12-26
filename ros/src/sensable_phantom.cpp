@@ -19,6 +19,7 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstCommon/cmnPath.h>
 #include <cisstCommon/cmnUnits.h>
 #include <cisstCommon/cmnCommandLineOptions.h>
+#include <cisstCommon/cmnQt.h>
 #include <cisstMultiTask/mtsTaskManager.h>
 #include <cisstMultiTask/mtsSystemQtWidget.h>
 #include <cisstParameterTypes/prmEventButtonQtWidget.h>
@@ -85,6 +86,7 @@ int main(int argc, char * argv[])
 
     // ROS bridge
     mtsROSBridge * rosBridge = new mtsROSBridge("SensableBridge", rosPeriod, true);
+    componentManager->AddComponent(rosBridge);
 
     // create a Qt user interface
     QApplication application(argc, argv);
@@ -108,7 +110,7 @@ int main(int argc, char * argv[])
             (name, "GetStateJoint",
              deviceNamespace + "state_joint_current");
 
-        // Buttons
+        // buttons
         rosBridge->AddPublisherFromEventWrite<prmEventButton, sensor_msgs::Joy>
             (name + "Button1", "Button",
              deviceNamespace + "button_1");
@@ -116,7 +118,7 @@ int main(int argc, char * argv[])
             (name + "Button2", "Button",
              deviceNamespace + "button_2");
 
-        // Messages
+        // messages
         rosBridge->AddLogFromEventWrite(name, "Error",
                                         mtsROSEventWriteLog::ROS_LOG_ERROR);
         rosBridge->AddLogFromEventWrite(name, "Warning",
@@ -124,8 +126,7 @@ int main(int argc, char * argv[])
         rosBridge->AddLogFromEventWrite(name, "Status",
                                         mtsROSEventWriteLog::ROS_LOG_INFO);
 
-        // add the bridge after all interfaces have been created
-        componentManager->AddComponent(rosBridge);
+        // connect the bridge after all interfaces have been created
         componentManager->Connect(rosBridge->GetName(), name,
                                   device->GetName(), name);
         componentManager->Connect(rosBridge->GetName(), name + "Button1",
@@ -134,7 +135,7 @@ int main(int argc, char * argv[])
                                   device->GetName(), name + "Button2");
 
         // Qt Widgets
-        
+
         // state (joint & cartesian
         prmStateRobotQtWidgetComponent * stateWidget
             = new prmStateRobotQtWidgetComponent("Sensable-" + name + "-StateWidget");
@@ -156,7 +157,7 @@ int main(int argc, char * argv[])
         componentManager->Connect(buttonsWidget->GetName(), name + "Button2",
                                   device->GetName(), name + "Button2");
         tabWidget->addTab(buttonsWidget, QString(name.c_str()) + " buttons");
-        
+
         // system info (timing and messages)
         mtsSystemQtWidgetComponent * systemWidget
             = new mtsSystemQtWidgetComponent("Sensable-" + name + "-SystemWidget");
@@ -172,6 +173,7 @@ int main(int argc, char * argv[])
     componentManager->StartAllAndWait(5.0 * cmn_s);
 
     // run Qt user interface
+    cmnQt::QApplicationExitsOnCtrlC();
     tabWidget->show();
     application.exec();
 

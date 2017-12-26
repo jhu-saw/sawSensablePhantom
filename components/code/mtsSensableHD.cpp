@@ -252,7 +252,6 @@ void mtsSensableHD::Configure(const std::string & filename)
                                    << "\" with force enabled set to \"" << mDevices.at(index)->ForceOutputEnabled
                                    << "\"" << std::endl;
     }
-
     SetupInterfaces();
 }
 
@@ -425,6 +424,8 @@ void mtsSensableHD::Create(void * CMN_UNUSED(data))
         device->DeviceEnabled = true;
         device->Interface->SendStatus(device->Name + ": found device model \""
                                       + hdGetString(HD_DEVICE_MODEL_TYPE) + "\"");
+        device->Interface->SendStatus(device->Name + ": found serial number \""
+                                      + hdGetString(HD_DEVICE_SERIAL_NUMBER) + "\"");
         if (device->ForceOutputEnabled) {
             hdEnable(HD_FORCE_OUTPUT);
         } else {
@@ -446,7 +447,7 @@ void mtsSensableHD::Create(void * CMN_UNUSED(data))
 void mtsSensableHD::Start(void)
 {
     HDErrorInfo error;
-    hdSetSchedulerRate(500);
+    hdSetSchedulerRate(1000);
     hdStartScheduler();
     // Check for errors
     if (HD_DEVICE_ERROR(error = hdGetError())) {
@@ -454,7 +455,6 @@ void mtsSensableHD::Start(void)
                                  <<  hdGetErrorString(error.errorCode) << "\"" << std::endl;
         return;
     }
-
     // Call base class Start function
     mtsTaskFromCallback::Start();
 
