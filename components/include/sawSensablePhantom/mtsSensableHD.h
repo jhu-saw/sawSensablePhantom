@@ -5,7 +5,7 @@
   Author(s): Anton Deguet
   Created on: 2008-04-04
 
-  (C) Copyright 2008-2017 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2008-2018 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -32,7 +32,7 @@ class mtsSensableHDDevice;
 class CISST_EXPORT mtsSensableHD: public mtsTaskFromCallbackAdapter {
     CMN_DECLARE_SERVICES(CMN_DYNAMIC_CREATION_ONEARG, CMN_LOG_ALLOW_DEFAULT);
 
-public:
+ public:
     enum {NB_JOINTS = 6};
 
     /*! Default constructor, will use the default device connected and
@@ -58,13 +58,13 @@ public:
     std::vector<std::string> DeviceNames(void) const;
     int DeviceCount;
 
-protected:
+ protected:
 
     typedef std::vector<mtsSensableHDDevice *> DevicesType;
-    DevicesType mDevices;
+    DevicesType m_devices;
     typedef std::vector<mtsSensableHDHandle *> HandlesType;
-    HandlesType mHandles;
-    mtsSensableHDDriverData * mDriver;
+    HandlesType m_handles;
+    mtsSensableHDDriverData * m_driver;
     void SetupInterfaces(void);
 };
 

@@ -5,7 +5,7 @@
   Author(s): Anton Deguet
   Created on: 2008-04-04
 
-  (C) Copyright 2008-2017 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2008-2018 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -42,51 +42,42 @@ struct mtsSensableHDDriverData {
 };
 
 struct mtsSensableHDHandle {
-    HHD DeviceHandle;
+    HHD m_device_handle;
 };
 
 // internal data using Sensable data types
 class mtsSensableHDDevice {
 public:
-    inline void SetDesiredState(const std::string & state) {
+    inline void enable(void) {
+        if (m_device_available) {
+            m_enabled = true;
+        }
     }
-    inline void GetDesiredState(std::string & state) const {
+    inline void disable(void) {
+        m_enabled = false;
     }
-    inline void GetCurrentState(std::string & state) const {
-    }
-    inline void SetPositionCartesian(const prmForceCartesianSet & desiredForceTorque) {
-    }
-    inline void SetPositionGoalCartesian(const prmPositionCartesianSet & newPosition) {
-    }
-    inline void SetWrenchBody(const prmForceCartesianSet & newForce) {
-    }
-    inline void SetGravityCompensation(const bool & gravityCompensation) {
-    }
-    inline void LockOrientation(const vctMatRot3 & orientation) {
-    }
-    inline void UnlockOrientation(void) {
-    }
-    inline void Freeze(void) {
+    inline void servo_cf(const prmForceCartesianSet & wrench) {
+        m_servo_cf = wrench;
     }
 
-    mtsInterfaceProvided * Interface;
+    mtsInterfaceProvided * m_interface;
 
-    bool DeviceEnabled;
-    bool ForceOutputEnabled;
+    bool m_device_available;
+    bool m_enabled;
 
     // local copy of the buttons state as defined by Sensable
-    int Buttons;
+    int m_buttons;
 
     // local copy of the position and velocities
-    prmPositionCartesianGet PositionCartesian, PositionCartesianDesired;
-    prmVelocityCartesianGet VelocityCartesian;
-    prmStateJoint StateJoint, StateGripper;
+    prmPositionCartesianGet m_measured_cp;
+    prmVelocityCartesianGet m_measured_cv;
+    prmStateJoint m_measured_js;
     vctDynamicVectorRef<double> GimbalPositionJointRef, GimbalEffortJointRef;
 
     // mtsFunction called to broadcast the event
     mtsFunctionWrite Button1Event, Button2Event;
 
-    prmForceCartesianSet ForceCartesian;
+    prmForceCartesianSet m_servo_cf;
 
     // local buffer used to store the position as provided
     // by Sensable
@@ -105,18 +96,18 @@ public:
 // The task Run method
 void mtsSensableHD::Run(void)
 {
-    int currentButtons;
-    const size_t nbDevices = mDevices.size();
+    int current_buttons;
+    const size_t nbDevices = m_devices.size();
     mtsSensableHDDevice * device;
     mtsSensableHDHandle * handle;
     HHD hHD;
 
     for (size_t index = 0; index != nbDevices; index++) {
-        currentButtons = 0;
-        device = mDevices.at(index);
-        handle = mHandles.at(index);
+        current_buttons = 0;
+        device = m_devices.at(index);
+        handle = m_handles.at(index);
         // begin haptics frame
-        hHD = handle->DeviceHandle;
+        hHD = handle->m_device_handle;
         hdMakeCurrentDevice(hHD);
         hdBeginFrame(hHD);
 
@@ -124,22 +115,27 @@ void mtsSensableHD::Run(void)
         hdGetDoublev(HD_CURRENT_TRANSFORM, device->Frame4x4.Pointer());
 
         // retrieve cartesian velocities, write directly in state data
-        hdGetDoublev(HD_CURRENT_VELOCITY, device->VelocityCartesian.VelocityLinear().Pointer());
-        hdGetDoublev(HD_CURRENT_ANGULAR_VELOCITY, device->VelocityCartesian.VelocityAngular().Pointer());
+        hdGetDoublev(HD_CURRENT_VELOCITY,
+                     device->m_measured_cv.VelocityLinear().Pointer());
+        hdGetDoublev(HD_CURRENT_ANGULAR_VELOCITY,
+                     device->m_measured_cv.VelocityAngular().Pointer());
 
         // retrieve joint positions and efforts, write directly in state data
-        hdGetDoublev(HD_CURRENT_JOINT_ANGLES, device->StateJoint.Position().Pointer());
-        hdGetDoublev(HD_CURRENT_GIMBAL_ANGLES, device->GimbalPositionJointRef.Pointer());
-        hdGetDoublev(HD_CURRENT_JOINT_TORQUE, device->StateJoint.Effort().Pointer());
-        hdGetDoublev(HD_CURRENT_GIMBAL_TORQUE, device->GimbalEffortJointRef.Pointer());
+        hdGetDoublev(HD_CURRENT_JOINT_ANGLES,
+                     device->m_measured_js.Position().Pointer());
+        hdGetDoublev(HD_CURRENT_GIMBAL_ANGLES,
+                     device->GimbalPositionJointRef.Pointer());
+        hdGetDoublev(HD_CURRENT_JOINT_TORQUE,
+                     device->m_measured_js.Effort().Pointer());
+        hdGetDoublev(HD_CURRENT_GIMBAL_TORQUE,
+                     device->GimbalEffortJointRef.Pointer());
 
         // retrieve the current button(s).
-        hdGetIntegerv(HD_CURRENT_BUTTONS, &currentButtons);
+        hdGetIntegerv(HD_CURRENT_BUTTONS, &current_buttons);
 
         // apply forces
-        if (device->ForceOutputEnabled) {
-            hdSetDoublev(HD_CURRENT_FORCE, device->ForceCartesian.Force().Pointer());
-        }
+        hdSetDoublev(HD_CURRENT_FORCE, device->m_servo_cf.Force().Pointer());
+
         // end haptics frame
         hdEndFrame(hHD);
 
@@ -147,17 +143,17 @@ void mtsSensableHD::Run(void)
         mtsStateIndex stateIndex = this->StateTable.GetIndexWriter();
 
         // copy transformation to the state table
-        device->PositionCartesian.Position().Translation().Assign(device->Frame4x4TranslationRef);
-        device->PositionCartesian.Position().Translation().Multiply(cmn_mm);
-        device->PositionCartesian.Position().Rotation().Assign(device->Frame4x4RotationRef);
+        device->m_measured_cp.Position().Translation().Assign(device->Frame4x4TranslationRef);
+        device->m_measured_cp.Position().Translation().Multiply(cmn_mm);
+        device->m_measured_cp.Position().Rotation().Assign(device->Frame4x4RotationRef);
 
         // compare to previous value to create events
-        if (currentButtons != device->Buttons) {
+        if (current_buttons != device->m_buttons) {
             int currentButtonState, previousButtonState;
             prmEventButton event;
             // test for button 1
-            currentButtonState = currentButtons & HD_DEVICE_BUTTON_1;
-            previousButtonState = device->Buttons & HD_DEVICE_BUTTON_1;
+            currentButtonState = current_buttons & HD_DEVICE_BUTTON_1;
+            previousButtonState = device->m_buttons & HD_DEVICE_BUTTON_1;
             if (currentButtonState != previousButtonState) {
                 if (currentButtonState == 0) {
                     event.SetType(prmEventButton::RELEASED);
@@ -168,8 +164,8 @@ void mtsSensableHD::Run(void)
                 device->Button1Event(event);
             }
             // test for button 2
-            currentButtonState = currentButtons & HD_DEVICE_BUTTON_2;
-            previousButtonState = device->Buttons & HD_DEVICE_BUTTON_2;
+            currentButtonState = current_buttons & HD_DEVICE_BUTTON_2;
+            previousButtonState = device->m_buttons & HD_DEVICE_BUTTON_2;
             if (currentButtonState != previousButtonState) {
                 if (currentButtonState == 0) {
                     device->Clutch = false;
@@ -182,13 +178,13 @@ void mtsSensableHD::Run(void)
                 device->Button2Event(event);
             }
             // save previous buttons state
-            device->Buttons = currentButtons;
+            device->m_buttons = current_buttons;
         }
 
         // set all as valid
-        device->StateJoint.Valid() = true;
-        device->PositionCartesian.Valid() = true;
-        device->VelocityCartesian.Valid() = true;
+        device->m_measured_js.Valid() = true;
+        device->m_measured_cp.Valid() = true;
+        device->m_measured_cv.Valid() = true;
     }
 
     // check for errors and abort the callback if a scheduler error
@@ -198,15 +194,15 @@ void mtsSensableHD::Run(void)
                           << hdGetErrorString(error.errorCode) << "\"" << std::endl;
         // propagate error to all devices interfaces
         for (size_t index = 0; index != nbDevices; index++) {
-            device = mDevices.at(index);
+            device = m_devices.at(index);
             // set all as invalid
-            device->StateJoint.Valid() = false;
-            device->PositionCartesian.Valid() = false;
-            device->VelocityCartesian.Valid() = false;
-            device->Interface->SendError(device->Name + ": fatal error in scheduler callback \""
-                                         + hdGetErrorString(error.errorCode) + "\"");
+            device->m_measured_js.Valid() = false;
+            device->m_measured_cp.Valid() = false;
+            device->m_measured_cv.Valid() = false;
+            device->m_interface->SendError(device->Name + ": fatal error in scheduler callback \""
+                                           + hdGetErrorString(error.errorCode) + "\"");
         }
-        mDriver->CallbackReturnValue = HD_CALLBACK_DONE;
+        m_driver->CallbackReturnValue = HD_CALLBACK_DONE;
         return;
     }
 
@@ -214,7 +210,7 @@ void mtsSensableHD::Run(void)
     ProcessQueuedCommands();
 
     // return flag to continue calling this function
-    mDriver->CallbackReturnValue = HD_CALLBACK_CONTINUE;
+    m_driver->CallbackReturnValue = HD_CALLBACK_CONTINUE;
 }
 
 void mtsSensableHD::Configure(const std::string & filename)
@@ -231,25 +227,18 @@ void mtsSensableHD::Configure(const std::string & filename)
     }
 
     const Json::Value devices = jsonConfig["devices"];
-    mDevices.resize(devices.size());
-    mHandles.resize(devices.size());
+    m_devices.resize(devices.size());
+    m_handles.resize(devices.size());
     for (unsigned int index = 0; index < devices.size(); ++index) {
-        mDevices.at(index) = new mtsSensableHDDevice;
-        mDevices.at(index)->DeviceNumber = index;
+        m_devices.at(index) = new mtsSensableHDDevice;
+        m_devices.at(index)->DeviceNumber = index;
         jsonValue = devices[index]["name"];
         if (!jsonValue.empty()) {
-            mDevices.at(index)->Name = jsonValue.asString();
+            m_devices.at(index)->Name = jsonValue.asString();
         } else {
             CMN_LOG_CLASS_INIT_ERROR << "Configure: no \"name\" found for device " << index << std::endl;
         }
-        jsonValue = devices[index]["force-enabled"];
-        if (!jsonValue.empty()) {
-            mDevices.at(index)->ForceOutputEnabled = jsonValue.asBool();
-        } else {
-            mDevices.at(index)->ForceOutputEnabled = true;
-        }
-        CMN_LOG_CLASS_INIT_VERBOSE << "Configure: found device \"" << mDevices.at(index)->Name
-                                   << "\" with force enabled set to \"" << mDevices.at(index)->ForceOutputEnabled
+        CMN_LOG_CLASS_INIT_VERBOSE << "Configure: found device \"" << m_devices.at(index)->Name
                                    << "\"" << std::endl;
     }
     SetupInterfaces();
@@ -257,119 +246,108 @@ void mtsSensableHD::Configure(const std::string & filename)
 
 void mtsSensableHD::SetupInterfaces(void)
 {
-    mDriver = new mtsSensableHDDriverData;
-    CMN_ASSERT(mDriver);
+    m_driver = new mtsSensableHDDriverData;
+    CMN_ASSERT(m_driver);
 
-    const size_t nbDevices = mDevices.size();
+    const size_t nbDevices = m_devices.size();
     mtsSensableHDDevice * device;
     std::string interfaceName;
-    mtsInterfaceProvided * providedInterface;
 
     for (size_t index = 0; index != nbDevices; index++) {
         // use local data pointer to make code more readable
-        device = mDevices.at(index);
+        device = m_devices.at(index);
         CMN_ASSERT(device);
         interfaceName = device->Name;
-        mHandles.at(index) = new mtsSensableHDHandle;
+        m_handles.at(index) = new mtsSensableHDHandle;
 
         device->Frame4x4TranslationRef.SetRef(device->Frame4x4.Column(3), 0);
         device->Frame4x4RotationRef.SetRef(device->Frame4x4, 0, 0);
-        device->StateJoint.Name().SetSize(NB_JOINTS);
-        device->StateJoint.Name().at(0) = "OuterYaw";
-        device->StateJoint.Name().at(1) = "OuterPitch1";
-        device->StateJoint.Name().at(2) = "OuterPitch2";
-        device->StateJoint.Name().at(3) = "Yaw";
-        device->StateJoint.Name().at(4) = "Pitch";
-        device->StateJoint.Name().at(5) = "Roll";
-        device->StateJoint.Type().SetSize(NB_JOINTS);
-        device->StateJoint.Type().SetAll(PRM_JOINT_REVOLUTE);
-        device->StateJoint.Position().SetSize(NB_JOINTS);
-        device->GimbalPositionJointRef.SetRef(device->StateJoint.Position(), 3, 3);
-        device->StateJoint.Effort().SetSize(NB_JOINTS);
-        device->GimbalEffortJointRef.SetRef(device->StateJoint.Effort(), 3, 3);
-        device->StateGripper.Position().SetSize(1);
-        device->StateGripper.Position().at(0) = 0.0;
+        device->m_measured_js.Name().SetSize(NB_JOINTS);
+        device->m_measured_js.Name().at(0) = "OuterYaw";
+        device->m_measured_js.Name().at(1) = "OuterPitch1";
+        device->m_measured_js.Name().at(2) = "OuterPitch2";
+        device->m_measured_js.Name().at(3) = "Yaw";
+        device->m_measured_js.Name().at(4) = "Pitch";
+        device->m_measured_js.Name().at(5) = "Roll";
+        device->m_measured_js.Type().SetSize(NB_JOINTS);
+        device->m_measured_js.Type().SetAll(PRM_JOINT_REVOLUTE);
+        device->m_measured_js.Position().SetSize(NB_JOINTS);
+        device->GimbalPositionJointRef.SetRef(device->m_measured_js.Position(), 3, 3);
+        device->m_measured_js.Effort().SetSize(NB_JOINTS);
+        device->GimbalEffortJointRef.SetRef(device->m_measured_js.Effort(), 3, 3);
 
-        device->PositionCartesian.Valid() = false;
-        device->PositionCartesian.SetReferenceFrame(device->Name + "_base");
-        device->PositionCartesian.SetMovingFrame(device->Name);
+        device->m_measured_cp.Valid() = false;
+        device->m_measured_cp.SetReferenceFrame(device->Name + "_base");
+        device->m_measured_cp.SetMovingFrame(device->Name);
         // set to zero
-        device->StateJoint.Position().SetAll(0.0);
-        device->StateJoint.Effort().SetAll(0.0);
-        device->VelocityCartesian.VelocityLinear().SetAll(0.0);
-        device->VelocityCartesian.VelocityAngular().SetAll(0.0);
+        device->m_measured_js.Position().SetAll(0.0);
+        device->m_measured_js.Effort().SetAll(0.0);
+        device->m_measured_cv.VelocityLinear().SetAll(0.0);
+        device->m_measured_cv.VelocityAngular().SetAll(0.0);
         device->Clutch = false;
 
         // create interface with the device name, i.e. the map key
         CMN_LOG_CLASS_INIT_DEBUG << "SetupInterfaces: creating interface \"" << interfaceName << "\"" << std::endl;
-        mtsInterfaceProvided * _interface = this->AddInterfaceProvided(interfaceName);
-        device->Interface = _interface;
+        mtsInterfaceProvided * provided = this->AddInterfaceProvided(interfaceName);
+        device->m_interface = provided;
 
         // for Status, Warning and Error with mtsMessage
-        _interface->AddMessageEvents();
+        provided->AddMessageEvents();
 
         // add the state data to the table
-        this->StateTable.AddData(device->PositionCartesian, interfaceName + "PositionCartesian");
-        this->StateTable.AddData(device->PositionCartesianDesired, interfaceName + "PositionCartesianDesired");
-        this->StateTable.AddData(device->VelocityCartesian, interfaceName + "VelocityCartesian");
-        this->StateTable.AddData(device->StateJoint, interfaceName + "StateJoint");
-        this->StateTable.AddData(device->StateGripper, interfaceName + "StateGripper");
-        this->StateTable.AddData(device->ForceCartesian, interfaceName + "ForceCartesian");
-        this->StateTable.AddData(device->Buttons, interfaceName + "Buttons");
+        this->StateTable.AddData(device->m_enabled, interfaceName + "_enabled");
+        this->StateTable.AddData(device->m_measured_cp, interfaceName + "_measured_cp");
+        this->StateTable.AddData(device->m_measured_cv, interfaceName + "_measured_cv");
+        this->StateTable.AddData(device->m_measured_js, interfaceName + "_measured_js");
+        this->StateTable.AddData(device->m_servo_cf, interfaceName + "_servo_cf");
+        this->StateTable.AddData(device->m_buttons, interfaceName + "_buttons");
 
         // provide read methods for state data
-        _interface->AddCommandReadState(this->StateTable, device->PositionCartesian,
-                                        "GetPositionCartesian");
-        _interface->AddCommandReadState(this->StateTable, device->PositionCartesianDesired,
-                                        "GetPositionCartesianDesired");
-        _interface->AddCommandReadState(this->StateTable, device->VelocityCartesian,
-                                        "GetVelocityCartesian");
-        _interface->AddCommandReadState(this->StateTable, device->StateJoint,
-                                        "GetStateJoint");
-        _interface->AddCommandReadState(this->StateTable, device->StateGripper,
-                                        "GetStateGripper");
+        provided->AddCommandReadState(this->StateTable, device->m_measured_cp,
+                                      "measured_cp");
+        provided->AddCommandReadState(this->StateTable, device->m_measured_cv,
+                                      "measured_cv");
+        provided->AddCommandReadState(this->StateTable, device->m_measured_js,
+                                      "measured_js");
+
+        // for backward compatibility, remove when cisst-SAW is crtk friendly
+        provided->AddCommandReadState(this->StateTable, device->m_measured_cp,
+                                      "GetPositionCartesian");
+        provided->AddCommandReadState(this->StateTable, device->m_measured_js,
+                                      "GetStateJoint");
 
         // commands
-        _interface->AddCommandWrite(&mtsSensableHDDevice::SetPositionGoalCartesian,
-                                    device, "SetPositionGoalCartesian");
-        _interface->AddCommandWrite(&mtsSensableHDDevice::SetWrenchBody,
-                                    device, "SetWrenchBody");
-        _interface->AddCommandWrite(&mtsSensableHDDevice::SetGravityCompensation,
-                                    device, "SetGravityCompensation");
-        _interface->AddCommandWrite(&mtsSensableHDDevice::LockOrientation,
-                                    device, "LockOrientation");
-        _interface->AddCommandVoid(&mtsSensableHDDevice::UnlockOrientation,
-                                   device, "UnlockOrientation");
-        _interface->AddCommandVoid(&mtsSensableHDDevice::Freeze,
-                                   device, "Freeze");
+        provided->AddCommandWrite(&mtsSensableHDDevice::servo_cf,
+                                  device, "servo_cf");
 
         // add a method to read the current state index
-        _interface->AddCommandRead(&mtsStateTable::GetIndexReader, &StateTable,
-                                          "GetStateIndex");
+        provided->AddCommandRead(&mtsStateTable::GetIndexReader, &StateTable,
+                                 "GetStateIndex");
 
-        // Stats
-        _interface->AddCommandReadState(this->StateTable, StateTable.PeriodStats,
-                                               "GetPeriodStatistics");
+        // stats
+        provided->AddCommandReadState(this->StateTable, StateTable.PeriodStats,
+                                      "GetPeriodStatistics");
 
-        // robot State
-        _interface->AddCommandWrite(&mtsSensableHDDevice::SetDesiredState,
-                                           device, "SetDesiredState", std::string(""));
-        _interface->AddCommandRead(&mtsSensableHDDevice::GetDesiredState,
-                                          device, "GetDesiredState", std::string(""));
-        _interface->AddCommandRead(&mtsSensableHDDevice::GetCurrentState,
-                                          device, "GetCurrentState", std::string(""));
+        // robot state
+        provided->AddCommandVoid(&mtsSensableHDDevice::enable,
+                                 device, "enable");
+        provided->AddCommandVoid(&mtsSensableHDDevice::disable,
+                                 device, "disable");
+        provided->AddCommandReadState(this->StateTable, device->m_enabled,
+                                      "enabled");
+
 
         // Add interfaces for button with events
-        providedInterface = this->AddInterfaceProvided(interfaceName + "Button1");
-        providedInterface->AddEventWrite(device->Button1Event, "Button",
-                                         prmEventButton());
-        providedInterface = this->AddInterfaceProvided(interfaceName + "Button2");
-        providedInterface->AddEventWrite(device->Button2Event, "Button",
-                                         prmEventButton());
+        provided = this->AddInterfaceProvided(interfaceName + "Button1");
+        provided->AddEventWrite(device->Button1Event, "Button",
+                                prmEventButton());
+        provided = this->AddInterfaceProvided(interfaceName + "Button2");
+        provided->AddEventWrite(device->Button2Event, "Button",
+                                prmEventButton());
 
         // This allows us to return Data->RetValue from the Run method.
-        mDriver->CallbackReturnValue = HD_CALLBACK_CONTINUE;
-        this->SetThreadReturnValue(static_cast<void *>(&mDriver->CallbackReturnValue));
+        m_driver->CallbackReturnValue = HD_CALLBACK_CONTINUE;
+        this->SetThreadReturnValue(static_cast<void *>(&m_driver->CallbackReturnValue));
     }
     CMN_LOG_CLASS_INIT_DEBUG << "SetupInterfaces: interfaces created: " << std::endl
                              << *this << std::endl;
@@ -378,69 +356,65 @@ void mtsSensableHD::SetupInterfaces(void)
 mtsSensableHD::~mtsSensableHD()
 {
     // free data object created using new
-    if (mDriver) {
-        delete mDriver;
-        mDriver = 0;
+    if (m_driver) {
+        delete m_driver;
+        m_driver = 0;
     }
-    const size_t nbDevices = mDevices.size();
+    const size_t nbDevices = m_devices.size();
 
     for (size_t index = 0; index != nbDevices; index++) {
-        if (mDevices.at(index)) {
-            delete mDevices.at(index);
-            mDevices.at(index) = 0;
+        if (m_devices.at(index)) {
+            delete m_devices.at(index);
+            m_devices.at(index) = 0;
         }
-        if (mHandles.at(index)) {
-            delete mHandles.at(index);
-            mDevices.at(index) = 0;
+        if (m_handles.at(index)) {
+            delete m_handles.at(index);
+            m_devices.at(index) = 0;
         }
     }
 }
 
 void mtsSensableHD::Create(void * CMN_UNUSED(data))
 {
-    const size_t nbDevices = mDevices.size();
+    const size_t nbDevices = m_devices.size();
 
     mtsSensableHDDevice * device;
     mtsSensableHDHandle * handle;
     std::string interfaceName;
     HDErrorInfo error;
 
-    CMN_ASSERT(mDriver);
+    CMN_ASSERT(m_driver);
 
     for (size_t index = 0; index != nbDevices; index++) {
-        device = mDevices.at(index);
+        device = m_devices.at(index);
         interfaceName = device->Name;
-        handle = mHandles.at(index);
+        handle = m_handles.at(index);
         CMN_ASSERT(device);
-        handle->DeviceHandle = hdInitDevice(interfaceName.c_str());
+        handle->m_device_handle = hdInitDevice(interfaceName.c_str());
         if (HD_DEVICE_ERROR(error = hdGetError())) {
-            device->Interface->SendError(device->Name + ": failed to initialize device \""
-                                         + hdGetErrorString(error.errorCode) + "\"");
-            device->DeviceEnabled = false;
+            device->m_interface->SendError(device->Name + ": failed to initialize device \""
+                                           + hdGetErrorString(error.errorCode) + "\"");
+            device->m_device_available = false;
             return;
         } else {
-            device->Interface->SendStatus(device->Name + ": device initialized");
+            device->m_interface->SendStatus(device->Name + ": device initialized");
         }
-        device->DeviceEnabled = true;
-        device->Interface->SendStatus(device->Name + ": found device model \""
-                                      + hdGetString(HD_DEVICE_MODEL_TYPE) + "\"");
-        device->Interface->SendStatus(device->Name + ": found serial number \""
-                                      + hdGetString(HD_DEVICE_SERIAL_NUMBER) + "\"");
-        if (device->ForceOutputEnabled) {
-            hdEnable(HD_FORCE_OUTPUT);
-        } else {
-            hdDisable(HD_FORCE_OUTPUT);
-        }
+        device->m_device_available = true;
+        device->m_interface->SendStatus(device->Name + ": found device model \""
+                                        + hdGetString(HD_DEVICE_MODEL_TYPE) + "\"");
+        device->m_interface->SendStatus(device->Name + ": found serial number \""
+                                        + hdGetString(HD_DEVICE_SERIAL_NUMBER) + "\"");
+        hdEnable(HD_FORCE_OUTPUT);
     }
 
     // Schedule the main callback that will communicate with the device
-    mDriver->CallbackHandle = hdScheduleAsynchronous(mtsTaskFromCallbackAdapter::CallbackAdapter<HDCallbackCode>,
-                                                     this->GetCallbackParameter(),
-                                                     HD_MAX_SCHEDULER_PRIORITY);
+    m_driver->CallbackHandle = hdScheduleAsynchronous(mtsTaskFromCallbackAdapter::CallbackAdapter<HDCallbackCode>,
+                                                      this->GetCallbackParameter(),
+                                                      HD_MAX_SCHEDULER_PRIORITY);
     // Call base class Create function
     mtsTaskFromCallback::Create();
 
-    // Set state to ready
+    // Set state to ready (cisstMultiTask component state, not robot state!)
     this->ChangeState(mtsComponentState::READY);
 }
 
@@ -459,11 +433,11 @@ void mtsSensableHD::Start(void)
     mtsTaskFromCallback::Start();
 
     // Send status
-    const size_t nbDevices = mDevices.size();
+    const size_t nbDevices = m_devices.size();
     mtsSensableHDDevice * device;
     for (size_t index = 0; index != nbDevices; index++) {
-        device = mDevices.at(index);
-        device->Interface->SendStatus(device->Name + ": scheduler started");
+        device = m_devices.at(index);
+        device->m_interface->SendStatus(device->Name + ": scheduler started");
     }
 }
 
@@ -471,17 +445,17 @@ void mtsSensableHD::Kill(void)
 {
     // For cleanup, unschedule callback and stop the scheduler
     hdStopScheduler();
-    hdUnschedule(mDriver->CallbackHandle);
+    hdUnschedule(m_driver->CallbackHandle);
 
     // Disable the devices
-    const size_t nbDevices = mDevices.size();
+    const size_t nbDevices = m_devices.size();
     mtsSensableHDDevice * device;
     mtsSensableHDHandle * handle;
     for (size_t index = 0; index != nbDevices; index++) {
-        device = mDevices.at(index);
-        handle = mHandles.at(index);
-        if (device->DeviceEnabled) {
-            hdDisableDevice(handle->DeviceHandle);
+        device = m_devices.at(index);
+        handle = m_handles.at(index);
+        if (device->m_device_available) {
+            hdDisableDevice(handle->m_device_handle);
         }
     }
 
@@ -495,11 +469,11 @@ void mtsSensableHD::Kill(void)
 std::vector<std::string> mtsSensableHD::DeviceNames(void) const
 {
     std::vector<std::string> result;
-    const size_t nbDevices = mDevices.size();
+    const size_t nbDevices = m_devices.size();
     result.resize(nbDevices);
     mtsSensableHDDevice * device;
     for (size_t index = 0; index != nbDevices; index++) {
-        device = mDevices.at(index);
+        device = m_devices.at(index);
         result.at(index) = device->Name;
     }
     return result;

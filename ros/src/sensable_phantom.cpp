@@ -5,7 +5,7 @@
   Author(s):  Anton Deguet
   Created on: 2017-03-21
 
-  (C) Copyright 2017 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2017-2018 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -104,11 +104,11 @@ int main(int argc, char * argv[])
         std::string deviceNamespace = rosNamespace + name + "/";
         // ROS publisher
         rosBridge->AddPublisherFromCommandRead<prmPositionCartesianGet, geometry_msgs::PoseStamped>
-            (name, "GetPositionCartesian",
-             deviceNamespace + "position_cartesian_current");
+            (name, "measured_cp",
+             deviceNamespace + "measured_cp");
         rosBridge->AddPublisherFromCommandRead<prmStateJoint, sensor_msgs::JointState>
-            (name, "GetStateJoint",
-             deviceNamespace + "state_joint_current");
+            (name, "measured_js",
+             deviceNamespace + "measured_js");
 
         // buttons
         rosBridge->AddPublisherFromEventWrite<prmEventButton, sensor_msgs::Joy>

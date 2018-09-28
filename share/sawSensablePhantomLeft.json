@@ -3,8 +3,7 @@
     "devices":
     [
         {
-            "name": "Left",
-            "force-enabled": true
+            "name": "Left"
         }
     ]
 }
