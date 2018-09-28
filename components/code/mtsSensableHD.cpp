@@ -336,7 +336,6 @@ void mtsSensableHD::SetupInterfaces(void)
         provided->AddCommandReadState(this->StateTable, device->m_enabled,
                                       "enabled");
 
-
         // Add interfaces for button with events
         provided = this->AddInterfaceProvided(interfaceName + "Button1");
         provided->AddEventWrite(device->Button1Event, "Button",

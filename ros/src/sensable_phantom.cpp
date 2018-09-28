@@ -90,6 +90,7 @@ int main(int argc, char * argv[])
 
     // create a Qt user interface
     QApplication application(argc, argv);
+    cmnQt::QApplicationExitsOnCtrlC();
 
     // organize all widgets in a tab widget
     QTabWidget * tabWidget = new QTabWidget;
@@ -102,6 +103,10 @@ int main(int argc, char * argv[])
          ++index) {
         std::string name = devices.at(index);
         std::string deviceNamespace = rosNamespace + name + "/";
+        std::replace(deviceNamespace.begin(), deviceNamespace.end(), ' ', '_');
+        std::replace(deviceNamespace.begin(), deviceNamespace.end(), '-', '_');
+        std::replace(deviceNamespace.begin(), deviceNamespace.end(), '.', '_');
+
         // ROS publisher
         rosBridge->AddPublisherFromCommandRead<prmPositionCartesianGet, geometry_msgs::PoseStamped>
             (name, "measured_cp",
@@ -117,6 +122,20 @@ int main(int argc, char * argv[])
         rosBridge->AddPublisherFromEventWrite<prmEventButton, sensor_msgs::Joy>
             (name + "Button2", "Button",
              deviceNamespace + "button_2");
+
+        // commands
+        rosBridge->AddSubscriberToCommandWrite<prmForceCartesianSet, geometry_msgs::WrenchStamped>
+            (name, "servo_cf",
+             deviceNamespace + "/servo_cf");
+        rosBridge->AddSubscriberToCommandVoid
+            (name, "enable", deviceNamespace + "enable");
+        rosBridge->AddSubscriberToCommandVoid
+            (name, "disable", deviceNamespace + "disable");
+             
+        // services
+        rosBridge->AddServiceFromCommandRead<bool, std_srvs::Trigger>
+            (name, "enabled",
+             deviceNamespace + "enabled");
 
         // messages
         rosBridge->AddLogFromEventWrite(name, "Error",
