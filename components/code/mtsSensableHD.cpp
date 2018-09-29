@@ -48,22 +48,38 @@ struct mtsSensableHDHandle {
 // internal data using Sensable data types
 class mtsSensableHDDevice {
 public:
-    inline void enable(void) {
-        if (m_device_available) {
-            m_enabled = true;
+    inline void set_device_state(const std::string & state) {
+        if (state == "ENABLED") {
+            if (m_device_available) {
+                m_device_state = "ENABLED";
+                m_enabled = true;
+            } else {
+                m_enabled = false;
+                m_interface->SendWarning(this->m_name
+                                         + ": can't change to state \"ENABLED\", device is not available");
+            }
+        } else if (state == "DISABLED") {
+            m_device_state = "DISABLED";
+            m_enabled = false;
+        } else {
+            m_interface->SendStatus(this->m_name + ": requested state \""
+                                    + state + "\" is not supported yet");
         }
+        // always emit event with current device state
+        m_state_event(m_device_state);
     }
-    inline void disable(void) {
-        m_enabled = false;
-    }
+
     inline void servo_cf(const prmForceCartesianSet & wrench) {
-        m_servo_cf = wrench;
+        if (m_enabled) {
+            m_servo_cf = wrench;
+        }
     }
 
     mtsInterfaceProvided * m_interface;
 
     bool m_device_available;
-    bool m_enabled;
+    bool m_enabled; // somewhat redundant with m_device_state but faster to test in runtime
+    mtsStdString m_device_state;
 
     // local copy of the buttons state as defined by Sensable
     int m_buttons;
@@ -75,7 +91,7 @@ public:
     vctDynamicVectorRef<double> GimbalPositionJointRef, GimbalEffortJointRef;
 
     // mtsFunction called to broadcast the event
-    mtsFunctionWrite Button1Event, Button2Event;
+    mtsFunctionWrite m_button1_event, m_button2_event, m_state_event;
 
     prmForceCartesianSet m_servo_cf;
 
@@ -88,8 +104,7 @@ public:
                                Frame4x4Type::ROWSTRIDE, Frame4x4Type::COLSTRIDE> Frame4x4RotationRef;
 
     bool Clutch;
-    std::string Name;
-    int DeviceNumber;
+    std::string m_name;
 };
 
 
@@ -161,7 +176,7 @@ void mtsSensableHD::Run(void)
                     event.SetType(prmEventButton::PRESSED);
                 }
                 // throw the event
-                device->Button1Event(event);
+                device->m_button1_event(event);
             }
             // test for button 2
             currentButtonState = current_buttons & HD_DEVICE_BUTTON_2;
@@ -175,7 +190,7 @@ void mtsSensableHD::Run(void)
                     event.SetType(prmEventButton::PRESSED);
                 }
                 // throw the event
-                device->Button2Event(event);
+                device->m_button2_event(event);
             }
             // save previous buttons state
             device->m_buttons = current_buttons;
@@ -199,7 +214,7 @@ void mtsSensableHD::Run(void)
             device->m_measured_js.Valid() = false;
             device->m_measured_cp.Valid() = false;
             device->m_measured_cv.Valid() = false;
-            device->m_interface->SendError(device->Name + ": fatal error in scheduler callback \""
+            device->m_interface->SendError(device->m_name + ": fatal error in scheduler callback \""
                                            + hdGetErrorString(error.errorCode) + "\"");
         }
         m_driver->CallbackReturnValue = HD_CALLBACK_DONE;
@@ -215,6 +230,17 @@ void mtsSensableHD::Run(void)
 
 void mtsSensableHD::Configure(const std::string & filename)
 {
+    // default case, no need to find device names in config file
+    if (filename == "") {
+        m_devices.resize(1);
+        m_handles.resize(1);
+        m_devices.at(0) = new mtsSensableHDDevice;
+        m_devices.at(0)->m_name = "Default";
+        SetupInterfaces();
+        return;
+    }
+
+    // look for names in configuration file
     std::ifstream jsonStream;
     jsonStream.open(filename.c_str());
 
@@ -223,7 +249,7 @@ void mtsSensableHD::Configure(const std::string & filename)
     if (!jsonReader.parse(jsonStream, jsonConfig)) {
         CMN_LOG_CLASS_INIT_ERROR << "Configure: failed to parse configuration\n"
                                  << jsonReader.getFormattedErrorMessages();
-        return;
+        exit(EXIT_FAILURE);
     }
 
     const Json::Value devices = jsonConfig["devices"];
@@ -231,14 +257,14 @@ void mtsSensableHD::Configure(const std::string & filename)
     m_handles.resize(devices.size());
     for (unsigned int index = 0; index < devices.size(); ++index) {
         m_devices.at(index) = new mtsSensableHDDevice;
-        m_devices.at(index)->DeviceNumber = index;
         jsonValue = devices[index]["name"];
         if (!jsonValue.empty()) {
-            m_devices.at(index)->Name = jsonValue.asString();
+            m_devices.at(index)->m_name = jsonValue.asString();
         } else {
             CMN_LOG_CLASS_INIT_ERROR << "Configure: no \"name\" found for device " << index << std::endl;
+            exit(EXIT_FAILURE);
         }
-        CMN_LOG_CLASS_INIT_VERBOSE << "Configure: found device \"" << m_devices.at(index)->Name
+        CMN_LOG_CLASS_INIT_VERBOSE << "Configure: found device \"" << m_devices.at(index)->m_name
                                    << "\"" << std::endl;
     }
     SetupInterfaces();
@@ -251,14 +277,16 @@ void mtsSensableHD::SetupInterfaces(void)
 
     const size_t nbDevices = m_devices.size();
     mtsSensableHDDevice * device;
-    std::string interfaceName;
+    std::string interface_name;
 
     for (size_t index = 0; index != nbDevices; index++) {
         // use local data pointer to make code more readable
         device = m_devices.at(index);
         CMN_ASSERT(device);
-        interfaceName = device->Name;
         m_handles.at(index) = new mtsSensableHDHandle;
+
+        device->m_enabled = false;
+        device->m_device_state = "DISABLED";
 
         device->Frame4x4TranslationRef.SetRef(device->Frame4x4.Column(3), 0);
         device->Frame4x4RotationRef.SetRef(device->Frame4x4, 0, 0);
@@ -277,8 +305,8 @@ void mtsSensableHD::SetupInterfaces(void)
         device->GimbalEffortJointRef.SetRef(device->m_measured_js.Effort(), 3, 3);
 
         device->m_measured_cp.Valid() = false;
-        device->m_measured_cp.SetReferenceFrame(device->Name + "_base");
-        device->m_measured_cp.SetMovingFrame(device->Name);
+        device->m_measured_cp.SetReferenceFrame(device->m_name + "_base");
+        device->m_measured_cp.SetMovingFrame(device->m_name);
         // set to zero
         device->m_measured_js.Position().SetAll(0.0);
         device->m_measured_js.Effort().SetAll(0.0);
@@ -287,20 +315,21 @@ void mtsSensableHD::SetupInterfaces(void)
         device->Clutch = false;
 
         // create interface with the device name, i.e. the map key
-        CMN_LOG_CLASS_INIT_DEBUG << "SetupInterfaces: creating interface \"" << interfaceName << "\"" << std::endl;
-        mtsInterfaceProvided * provided = this->AddInterfaceProvided(interfaceName);
+        CMN_LOG_CLASS_INIT_DEBUG << "SetupInterfaces: creating interface \""
+                                 << device->m_name << "\"" << std::endl;
+        mtsInterfaceProvided * provided = this->AddInterfaceProvided(device->m_name);
         device->m_interface = provided;
 
         // for Status, Warning and Error with mtsMessage
         provided->AddMessageEvents();
 
         // add the state data to the table
-        this->StateTable.AddData(device->m_enabled, interfaceName + "_enabled");
-        this->StateTable.AddData(device->m_measured_cp, interfaceName + "_measured_cp");
-        this->StateTable.AddData(device->m_measured_cv, interfaceName + "_measured_cv");
-        this->StateTable.AddData(device->m_measured_js, interfaceName + "_measured_js");
-        this->StateTable.AddData(device->m_servo_cf, interfaceName + "_servo_cf");
-        this->StateTable.AddData(device->m_buttons, interfaceName + "_buttons");
+        this->StateTable.AddData(device->m_device_state, device->m_name + "_device_state");
+        this->StateTable.AddData(device->m_measured_cp, device->m_name + "_measured_cp");
+        this->StateTable.AddData(device->m_measured_cv, device->m_name + "_measured_cv");
+        this->StateTable.AddData(device->m_measured_js, device->m_name + "_measured_js");
+        this->StateTable.AddData(device->m_servo_cf, device->m_name + "_servo_cf");
+        this->StateTable.AddData(device->m_buttons, device->m_name + "_buttons");
 
         // provide read methods for state data
         provided->AddCommandReadState(this->StateTable, device->m_measured_cp,
@@ -329,19 +358,19 @@ void mtsSensableHD::SetupInterfaces(void)
                                       "GetPeriodStatistics");
 
         // robot state
-        provided->AddCommandVoid(&mtsSensableHDDevice::enable,
-                                 device, "enable");
-        provided->AddCommandVoid(&mtsSensableHDDevice::disable,
-                                 device, "disable");
-        provided->AddCommandReadState(this->StateTable, device->m_enabled,
-                                      "enabled");
+        provided->AddCommandWrite(&mtsSensableHDDevice::set_device_state,
+                                  device, "set_device_state");
+        provided->AddCommandReadState(this->StateTable, device->m_device_state,
+                                      "device_state");
+        provided->AddEventWrite(device->m_state_event, "device_state",
+                                std::string());
 
         // Add interfaces for button with events
-        provided = this->AddInterfaceProvided(interfaceName + "Button1");
-        provided->AddEventWrite(device->Button1Event, "Button",
+        provided = this->AddInterfaceProvided(device->m_name + "Button1");
+        provided->AddEventWrite(device->m_button1_event, "Button",
                                 prmEventButton());
-        provided = this->AddInterfaceProvided(interfaceName + "Button2");
-        provided->AddEventWrite(device->Button2Event, "Button",
+        provided = this->AddInterfaceProvided(device->m_name + "Button2");
+        provided->AddEventWrite(device->m_button2_event, "Button",
                                 prmEventButton());
 
         // This allows us to return Data->RetValue from the Run method.
@@ -379,29 +408,27 @@ void mtsSensableHD::Create(void * CMN_UNUSED(data))
 
     mtsSensableHDDevice * device;
     mtsSensableHDHandle * handle;
-    std::string interfaceName;
     HDErrorInfo error;
 
     CMN_ASSERT(m_driver);
 
     for (size_t index = 0; index != nbDevices; index++) {
         device = m_devices.at(index);
-        interfaceName = device->Name;
         handle = m_handles.at(index);
         CMN_ASSERT(device);
-        handle->m_device_handle = hdInitDevice(interfaceName.c_str());
+        handle->m_device_handle = hdInitDevice(device->m_name.c_str());
         if (HD_DEVICE_ERROR(error = hdGetError())) {
-            device->m_interface->SendError(device->Name + ": failed to initialize device \""
+            device->m_interface->SendError(device->m_name + ": failed to initialize device \""
                                            + hdGetErrorString(error.errorCode) + "\"");
             device->m_device_available = false;
             return;
         } else {
-            device->m_interface->SendStatus(device->Name + ": device initialized");
+            device->m_interface->SendStatus(device->m_name + ": device initialized");
         }
         device->m_device_available = true;
-        device->m_interface->SendStatus(device->Name + ": found device model \""
+        device->m_interface->SendStatus(device->m_name + ": found device model \""
                                         + hdGetString(HD_DEVICE_MODEL_TYPE) + "\"");
-        device->m_interface->SendStatus(device->Name + ": found serial number \""
+        device->m_interface->SendStatus(device->m_name + ": found serial number \""
                                         + hdGetString(HD_DEVICE_SERIAL_NUMBER) + "\"");
         hdEnable(HD_FORCE_OUTPUT);
     }
@@ -436,7 +463,7 @@ void mtsSensableHD::Start(void)
     mtsSensableHDDevice * device;
     for (size_t index = 0; index != nbDevices; index++) {
         device = m_devices.at(index);
-        device->m_interface->SendStatus(device->Name + ": scheduler started");
+        device->m_interface->SendStatus(device->m_name + ": scheduler started");
     }
 }
 
@@ -473,7 +500,7 @@ std::vector<std::string> mtsSensableHD::DeviceNames(void) const
     mtsSensableHDDevice * device;
     for (size_t index = 0; index != nbDevices; index++) {
         device = m_devices.at(index);
-        result.at(index) = device->Name;
+        result.at(index) = device->m_name;
     }
     return result;
 }

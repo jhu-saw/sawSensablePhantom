@@ -107,13 +107,16 @@ int main(int argc, char * argv[])
         std::replace(deviceNamespace.begin(), deviceNamespace.end(), '-', '_');
         std::replace(deviceNamespace.begin(), deviceNamespace.end(), '.', '_');
 
-        // ROS publisher
-        rosBridge->AddPublisherFromCommandRead<prmPositionCartesianGet, geometry_msgs::PoseStamped>
-            (name, "measured_cp",
-             deviceNamespace + "measured_cp");
+        // motion commands
         rosBridge->AddPublisherFromCommandRead<prmStateJoint, sensor_msgs::JointState>
             (name, "measured_js",
              deviceNamespace + "measured_js");
+        rosBridge->AddPublisherFromCommandRead<prmPositionCartesianGet, geometry_msgs::PoseStamped>
+            (name, "measured_cp",
+             deviceNamespace + "measured_cp");
+        rosBridge->AddSubscriberToCommandWrite<prmForceCartesianSet, geometry_msgs::WrenchStamped>
+            (name, "servo_cf",
+             deviceNamespace + "/servo_cf");
 
         // buttons
         rosBridge->AddPublisherFromEventWrite<prmEventButton, sensor_msgs::Joy>
@@ -123,19 +126,16 @@ int main(int argc, char * argv[])
             (name + "Button2", "Button",
              deviceNamespace + "button_2");
 
-        // commands
-        rosBridge->AddSubscriberToCommandWrite<prmForceCartesianSet, geometry_msgs::WrenchStamped>
-            (name, "servo_cf",
-             deviceNamespace + "/servo_cf");
-        rosBridge->AddSubscriberToCommandVoid
-            (name, "enable", deviceNamespace + "enable");
-        rosBridge->AddSubscriberToCommandVoid
-            (name, "disable", deviceNamespace + "disable");
-             
-        // services
-        rosBridge->AddServiceFromCommandRead<bool, std_srvs::Trigger>
-            (name, "enabled",
-             deviceNamespace + "enabled");
+        // device state
+        rosBridge->AddSubscriberToCommandWrite<std::string, std_msgs::String>
+            (name, "set_device_state",
+             deviceNamespace + "set_device_state");
+        rosBridge->AddPublisherFromEventWrite<std::string, std_msgs::String>
+            (name, "device_state",
+             deviceNamespace + "device_state");
+        rosBridge->AddServiceFromCommandRead<std::string, std_srvs::Trigger>
+            (name, "device_state",
+             deviceNamespace + "device_state");
 
         // messages
         rosBridge->AddLogFromEventWrite(name, "Error",
