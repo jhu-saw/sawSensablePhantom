@@ -50,7 +50,7 @@ int main(int argc, char * argv[])
     // parse options
     cmnCommandLineOptions options;
     std::string jsonConfigFile = "";
-    double rosPeriod = 10.0 * cmn_ms;
+    double rosPeriod = 5.0 * cmn_ms;
     std::string rosNamespace = "/sensable/";
 
     options.AddOptionOneValue("j", "json-config",
@@ -58,7 +58,7 @@ int main(int argc, char * argv[])
                               cmnCommandLineOptions::REQUIRED_OPTION, &jsonConfigFile);
 
     options.AddOptionOneValue("p", "ros-period",
-                              "period in seconds to read all tool positions (default 0.01, 10 ms, 100Hz).  There is no point to have a period higher than the tracker component",
+                              "period in seconds to read all tool positions (default 0.005, 5 ms, 200Hz).  There is no point to have a period higher than the tracker component",
                               cmnCommandLineOptions::OPTIONAL_OPTION, &rosPeriod);
 
     options.AddOptionOneValue("n", "ros-namespace",
@@ -84,9 +84,12 @@ int main(int argc, char * argv[])
     mtsManagerLocal * componentManager = mtsComponentManager::GetInstance();
     componentManager->AddComponent(device);
 
-    // ROS bridge
-    mtsROSBridge * rosBridge = new mtsROSBridge("SensableBridge", rosPeriod, true);
-    componentManager->AddComponent(rosBridge);
+    // ROS bridge for publishers
+    mtsROSBridge * pub_bridge = new mtsROSBridge("sensable_pub", rosPeriod, true);
+    // separate thread to spin, i.e. subscribe
+    mtsROSBridge * spin_bridge = new mtsROSBridge("sensable_spin", 0.1 * cmn_ms, true, false);
+    componentManager->AddComponent(pub_bridge);
+    componentManager->AddComponent(spin_bridge);
 
     // create a Qt user interface
     QApplication application(argc, argv);
@@ -108,51 +111,53 @@ int main(int argc, char * argv[])
         std::replace(deviceNamespace.begin(), deviceNamespace.end(), '.', '_');
 
         // motion commands
-        rosBridge->AddPublisherFromCommandRead<prmStateJoint, sensor_msgs::JointState>
+        pub_bridge->AddPublisherFromCommandRead<prmStateJoint, sensor_msgs::JointState>
             (name, "measured_js",
              deviceNamespace + "measured_js");
-        rosBridge->AddPublisherFromCommandRead<prmPositionCartesianGet, geometry_msgs::PoseStamped>
+        pub_bridge->AddPublisherFromCommandRead<prmPositionCartesianGet, geometry_msgs::TransformStamped>
             (name, "measured_cp",
              deviceNamespace + "measured_cp");
-        rosBridge->AddSubscriberToCommandWrite<prmForceCartesianSet, geometry_msgs::WrenchStamped>
+        spin_bridge->AddSubscriberToCommandWrite<prmForceCartesianSet, geometry_msgs::WrenchStamped>
             (name, "servo_cf",
              deviceNamespace + "/servo_cf");
-
+        
         // buttons
-        rosBridge->AddPublisherFromEventWrite<prmEventButton, sensor_msgs::Joy>
+        spin_bridge->AddPublisherFromEventWrite<prmEventButton, sensor_msgs::Joy>
             (name + "Button1", "Button",
              deviceNamespace + "button_1");
-        rosBridge->AddPublisherFromEventWrite<prmEventButton, sensor_msgs::Joy>
+        spin_bridge->AddPublisherFromEventWrite<prmEventButton, sensor_msgs::Joy>
             (name + "Button2", "Button",
              deviceNamespace + "button_2");
 
         // device state
-        rosBridge->AddSubscriberToCommandWrite<std::string, std_msgs::String>
+        spin_bridge->AddSubscriberToCommandWrite<std::string, std_msgs::String>
             (name, "set_device_state",
              deviceNamespace + "set_device_state");
-        rosBridge->AddPublisherFromEventWrite<std::string, std_msgs::String>
+        spin_bridge->AddPublisherFromEventWrite<std::string, std_msgs::String>
             (name, "device_state",
              deviceNamespace + "device_state");
-        rosBridge->AddServiceFromCommandRead<std::string, std_srvs::Trigger>
+        spin_bridge->AddServiceFromCommandRead<std::string, std_srvs::Trigger>
             (name, "device_state",
              deviceNamespace + "device_state");
 
         // messages
-        rosBridge->AddLogFromEventWrite(name, "Error",
-                                        mtsROSEventWriteLog::ROS_LOG_ERROR);
-        rosBridge->AddLogFromEventWrite(name, "Warning",
-                                        mtsROSEventWriteLog::ROS_LOG_WARN);
-        rosBridge->AddLogFromEventWrite(name, "Status",
-                                        mtsROSEventWriteLog::ROS_LOG_INFO);
-
+        spin_bridge->AddLogFromEventWrite(name, "Error",
+                                          mtsROSEventWriteLog::ROS_LOG_ERROR);
+        spin_bridge->AddLogFromEventWrite(name, "Warning",
+                                          mtsROSEventWriteLog::ROS_LOG_WARN);
+        spin_bridge->AddLogFromEventWrite(name, "Status",
+                                          mtsROSEventWriteLog::ROS_LOG_INFO);
+        
         // connect the bridge after all interfaces have been created
-        componentManager->Connect(rosBridge->GetName(), name,
+        componentManager->Connect(pub_bridge->GetName(), name,
                                   device->GetName(), name);
-        componentManager->Connect(rosBridge->GetName(), name + "Button1",
+        componentManager->Connect(spin_bridge->GetName(), name,
+                                  device->GetName(), name);
+        componentManager->Connect(spin_bridge->GetName(), name + "Button1",
                                   device->GetName(), name + "Button1");
-        componentManager->Connect(rosBridge->GetName(), name + "Button2",
+        componentManager->Connect(spin_bridge->GetName(), name + "Button2",
                                   device->GetName(), name + "Button2");
-
+        
         // Qt Widgets
 
         // state (joint & cartesian
