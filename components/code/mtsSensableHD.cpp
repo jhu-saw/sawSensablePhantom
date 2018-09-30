@@ -132,6 +132,7 @@ void mtsSensableHD::Run(void)
         // retrieve cartesian velocities, write directly in state data
         hdGetDoublev(HD_CURRENT_VELOCITY,
                      device->m_measured_cv.VelocityLinear().Pointer());
+        device->m_measured_cv.VelocityLinear().Multiply(cmn_mm);
         hdGetDoublev(HD_CURRENT_ANGULAR_VELOCITY,
                      device->m_measured_cv.VelocityAngular().Pointer());
 
