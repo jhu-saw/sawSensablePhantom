@@ -50,7 +50,7 @@ int main(int argc, char * argv[])
     // parse options
     cmnCommandLineOptions options;
     std::string jsonConfigFile = "";
-    double rosPeriod = 5.0 * cmn_ms;
+    double rosPeriod = 2.0 * cmn_ms;
     std::string rosNamespace = "/sensable/";
 
     options.AddOptionOneValue("j", "json-config",
@@ -58,7 +58,7 @@ int main(int argc, char * argv[])
                               cmnCommandLineOptions::REQUIRED_OPTION, &jsonConfigFile);
 
     options.AddOptionOneValue("p", "ros-period",
-                              "period in seconds to read all tool positions (default 0.005, 5 ms, 200Hz).  There is no point to have a period higher than the tracker component",
+                              "period in seconds to read all tool positions (default 0.002, 2 ms, 500Hz).  There is no point to have a period higher than the tracker component",
                               cmnCommandLineOptions::OPTIONAL_OPTION, &rosPeriod);
 
     options.AddOptionOneValue("n", "ros-namespace",
@@ -117,10 +117,13 @@ int main(int argc, char * argv[])
         pub_bridge->AddPublisherFromCommandRead<prmPositionCartesianGet, geometry_msgs::TransformStamped>
             (name, "measured_cp",
              deviceNamespace + "measured_cp");
+        pub_bridge->AddPublisherFromCommandRead<prmVelocityCartesianGet, geometry_msgs::TwistStamped>
+            (name, "measured_cv",
+             deviceNamespace + "measured_cv");
         spin_bridge->AddSubscriberToCommandWrite<prmForceCartesianSet, geometry_msgs::WrenchStamped>
             (name, "servo_cf",
              deviceNamespace + "/servo_cf");
-        
+
         // buttons
         spin_bridge->AddPublisherFromEventWrite<prmEventButton, sensor_msgs::Joy>
             (name + "Button1", "Button",
@@ -147,7 +150,7 @@ int main(int argc, char * argv[])
                                           mtsROSEventWriteLog::ROS_LOG_WARN);
         spin_bridge->AddLogFromEventWrite(name, "Status",
                                           mtsROSEventWriteLog::ROS_LOG_INFO);
-        
+
         // connect the bridge after all interfaces have been created
         componentManager->Connect(pub_bridge->GetName(), name,
                                   device->GetName(), name);
@@ -157,7 +160,7 @@ int main(int argc, char * argv[])
                                   device->GetName(), name + "Button1");
         componentManager->Connect(spin_bridge->GetName(), name + "Button2",
                                   device->GetName(), name + "Button2");
-        
+
         // Qt Widgets
 
         // state (joint & cartesian
