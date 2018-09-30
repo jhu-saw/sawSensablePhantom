@@ -66,6 +66,9 @@ public:
                                     + state + "\" is not supported yet");
         }
         // always emit event with current device state
+        m_interface->SendStatus(this->m_name
+                                + ": current state is \""
+                                + m_device_state.Data + "\"");
         m_state_event(m_device_state);
     }
 
