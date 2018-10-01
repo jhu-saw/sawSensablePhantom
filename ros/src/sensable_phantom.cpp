@@ -58,7 +58,7 @@ int main(int argc, char * argv[])
                               cmnCommandLineOptions::REQUIRED_OPTION, &jsonConfigFile);
 
     options.AddOptionOneValue("p", "ros-period",
-                              "period in seconds to read all tool positions (default 0.002, 2 ms, 500Hz).  There is no point to have a period higher than the tracker component",
+                              "period in seconds to read all tool positions (default 0.002, 2 ms, 500Hz).  There is no point to have a period higher than the device",
                               cmnCommandLineOptions::OPTIONAL_OPTION, &rosPeriod);
 
     options.AddOptionOneValue("n", "ros-namespace",
@@ -122,7 +122,7 @@ int main(int argc, char * argv[])
              deviceNamespace + "measured_cv");
         spin_bridge->AddSubscriberToCommandWrite<prmForceCartesianSet, geometry_msgs::WrenchStamped>
             (name, "servo_cf",
-             deviceNamespace + "/servo_cf");
+             deviceNamespace + "servo_cf");
 
         // buttons
         spin_bridge->AddPublisherFromEventWrite<prmEventButton, sensor_msgs::Joy>
