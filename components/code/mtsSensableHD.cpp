@@ -55,9 +55,9 @@ public:
     mtsFunctionWrite m_operating_state_event;
 
     inline void state_command(const std::string & command) {
-        if (command == "ENABLE") {
+        if (command == "enable") {
             m_operating_state.State() = prmOperatingState::ENABLED;
-        } else if (command == "DISABLE") {
+        } else if (command == "disable") {
             m_operating_state.State() = prmOperatingState::DISABLED;
         } else {
             m_interface->SendStatus(this->m_name + ": state command \""
@@ -67,6 +67,7 @@ public:
         m_interface->SendStatus(this->m_name
                                 + ": current state is \""
                                 + prmOperatingState::EnumToString(m_operating_state.State()) + "\"");
+        m_operating_state.Valid() = true;
         m_operating_state_event(m_operating_state);
     }
 
