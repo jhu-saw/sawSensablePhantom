@@ -5,7 +5,7 @@
   Author(s):  Anton Deguet
   Created on: 2017-03-21
 
-  (C) Copyright 2017-2018 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2017-2019 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -134,14 +134,14 @@ int main(int argc, char * argv[])
 
         // device state
         spin_bridge->AddSubscriberToCommandWrite<std::string, std_msgs::String>
-            (name, "set_device_state",
-             deviceNamespace + "set_device_state");
-        spin_bridge->AddPublisherFromEventWrite<std::string, std_msgs::String>
-            (name, "device_state",
-             deviceNamespace + "device_state");
-        spin_bridge->AddServiceFromCommandRead<std::string, std_srvs::Trigger>
-            (name, "device_state",
-             deviceNamespace + "device_state");
+            (name, "state_command",
+             deviceNamespace + "state_command");
+        spin_bridge->AddPublisherFromEventWrite<prmOperatingState, crtk_msgs::operating_state>
+            (name, "operating_state",
+             deviceNamespace + "operating_state");
+        spin_bridge->AddServiceFromCommandRead<prmOperatingState, crtk_msgs::trigger_operating_state>
+            (name, "operating_state",
+             deviceNamespace + "operating_state");
 
         // messages
         spin_bridge->AddLogFromEventWrite(name, "Error",

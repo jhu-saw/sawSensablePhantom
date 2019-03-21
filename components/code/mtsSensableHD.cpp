@@ -5,7 +5,7 @@
   Author(s): Anton Deguet
   Created on: 2008-04-04
 
-  (C) Copyright 2008-2018 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2008-2019 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -27,6 +27,8 @@ http://www.cisst.org/cisst/license.txt.
 
 #include <cisstCommon/cmnUnits.h>
 #include <cisstMultiTask/mtsInterfaceProvided.h>
+
+#include <cisstParameterTypes/prmOperatingState.h>
 #include <cisstParameterTypes/prmPositionCartesianGet.h>
 #include <cisstParameterTypes/prmVelocityCartesianGet.h>
 #include <cisstParameterTypes/prmStateJoint.h>
@@ -47,33 +49,29 @@ struct mtsSensableHDHandle {
 
 // internal data using Sensable data types
 class mtsSensableHDDevice {
+
 public:
-    inline void set_device_state(const std::string & state) {
-        if (state == "ENABLED") {
-            if (m_device_available) {
-                m_device_state = "ENABLED";
-                m_enabled = true;
-            } else {
-                m_enabled = false;
-                m_interface->SendWarning(this->m_name
-                                         + ": can't change to state \"ENABLED\", device is not available");
-            }
-        } else if (state == "DISABLED") {
-            m_device_state = "DISABLED";
-            m_enabled = false;
+    prmOperatingState m_operating_state;
+    mtsFunctionWrite m_operating_state_event;
+
+    inline void state_command(const std::string & command) {
+        if (command == "ENABLE") {
+            m_operating_state.State() = prmOperatingState::ENABLED;
+        } else if (command == "DISABLE") {
+            m_operating_state.State() = prmOperatingState::DISABLED;
         } else {
-            m_interface->SendStatus(this->m_name + ": requested state \""
-                                    + state + "\" is not supported yet");
+            m_interface->SendStatus(this->m_name + ": state command \""
+                                    + command + "\" is not supported yet");
         }
         // always emit event with current device state
         m_interface->SendStatus(this->m_name
                                 + ": current state is \""
-                                + m_device_state.Data + "\"");
-        m_state_event(m_device_state);
+                                + prmOperatingState::EnumToString(m_operating_state.State()) + "\"");
+        m_operating_state_event(m_operating_state);
     }
 
     inline void servo_cf(const prmForceCartesianSet & wrench) {
-        if (m_enabled) {
+        if (m_operating_state.State() == prmOperatingState::ENABLED) {
             m_servo_cf = wrench;
         }
     }
@@ -81,8 +79,6 @@ public:
     mtsInterfaceProvided * m_interface;
 
     bool m_device_available;
-    bool m_enabled; // somewhat redundant with m_device_state but faster to test in runtime
-    mtsStdString m_device_state;
 
     // local copy of the buttons state as defined by Sensable
     int m_buttons;
@@ -289,8 +285,7 @@ void mtsSensableHD::SetupInterfaces(void)
         CMN_ASSERT(device);
         m_handles.at(index) = new mtsSensableHDHandle;
 
-        device->m_enabled = false;
-        device->m_device_state = "DISABLED";
+        device->m_operating_state.State() = prmOperatingState::DISABLED;
 
         device->Frame4x4TranslationRef.SetRef(device->Frame4x4.Column(3), 0);
         device->Frame4x4RotationRef.SetRef(device->Frame4x4, 0, 0);
@@ -328,7 +323,7 @@ void mtsSensableHD::SetupInterfaces(void)
         provided->AddMessageEvents();
 
         // add the state data to the table
-        this->StateTable.AddData(device->m_device_state, device->m_name + "_device_state");
+        this->StateTable.AddData(device->m_operating_state, device->m_name + "_operating_state");
         this->StateTable.AddData(device->m_measured_cp, device->m_name + "_measured_cp");
         this->StateTable.AddData(device->m_measured_cv, device->m_name + "_measured_cv");
         this->StateTable.AddData(device->m_measured_js, device->m_name + "_measured_js");
@@ -362,12 +357,12 @@ void mtsSensableHD::SetupInterfaces(void)
                                       "GetPeriodStatistics");
 
         // robot state
-        provided->AddCommandWrite(&mtsSensableHDDevice::set_device_state,
-                                  device, "set_device_state");
-        provided->AddCommandReadState(this->StateTable, device->m_device_state,
-                                      "device_state");
-        provided->AddEventWrite(device->m_state_event, "device_state",
-                                std::string());
+        provided->AddCommandWrite(&mtsSensableHDDevice::state_command,
+                                  device, "state_command");
+        provided->AddCommandReadState(this->StateTable, device->m_operating_state,
+                                      "operating_state");
+        provided->AddEventWrite(device->m_operating_state_event, "operating_state",
+                                prmOperatingState());
 
         // Add interfaces for button with events
         provided = this->AddInterfaceProvided(device->m_name + "Button1");
