@@ -5,7 +5,7 @@
   Author(s): Anton Deguet
   Created on: 2008-04-04
 
-  (C) Copyright 2008-2017 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2008-2019 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -30,6 +30,7 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstParameterTypes/prmPositionCartesianGet.h>
 #include <cisstParameterTypes/prmVelocityCartesianGet.h>
 #include <cisstParameterTypes/prmStateJoint.h>
+#include <cisstParameterTypes/prmConfigurationJoint.h>
 #include <cisstParameterTypes/prmForceCartesianSet.h>
 #include <cisstParameterTypes/prmPositionCartesianSet.h>
 #include <cisstParameterTypes/prmEventButton.h>
@@ -80,7 +81,8 @@ public:
     // local copy of the position and velocities
     prmPositionCartesianGet PositionCartesian, PositionCartesianDesired;
     prmVelocityCartesianGet VelocityCartesian;
-    prmStateJoint StateJoint, StateGripper;
+    prmStateJoint StateJoint;
+    prmConfigurationJoint ConfigurationJoint;
     vctDynamicVectorRef<double> GimbalPositionJointRef, GimbalEffortJointRef;
 
     // mtsFunction called to broadcast the event
@@ -281,14 +283,15 @@ void mtsSensableHD::SetupInterfaces(void)
         device->StateJoint.Name().at(3) = "Yaw";
         device->StateJoint.Name().at(4) = "Pitch";
         device->StateJoint.Name().at(5) = "Roll";
-        device->StateJoint.Type().SetSize(NB_JOINTS);
-        device->StateJoint.Type().SetAll(PRM_JOINT_REVOLUTE);
         device->StateJoint.Position().SetSize(NB_JOINTS);
         device->GimbalPositionJointRef.SetRef(device->StateJoint.Position(), 3, 3);
         device->StateJoint.Effort().SetSize(NB_JOINTS);
         device->GimbalEffortJointRef.SetRef(device->StateJoint.Effort(), 3, 3);
-        device->StateGripper.Position().SetSize(1);
-        device->StateGripper.Position().at(0) = 0.0;
+
+        device->ConfigurationJoint.Name() = device->StateJoint.Name();
+        device->ConfigurationJoint.Type().SetSize(NB_JOINTS);
+        device->ConfigurationJoint.Type().SetAll(PRM_JOINT_REVOLUTE);
+        device->ConfigurationJoint.Valid() = true;
 
         device->PositionCartesian.Valid() = false;
         device->PositionCartesian.SetReferenceFrame(device->Name + "_base");
@@ -313,7 +316,6 @@ void mtsSensableHD::SetupInterfaces(void)
         this->StateTable.AddData(device->PositionCartesianDesired, interfaceName + "PositionCartesianDesired");
         this->StateTable.AddData(device->VelocityCartesian, interfaceName + "VelocityCartesian");
         this->StateTable.AddData(device->StateJoint, interfaceName + "StateJoint");
-        this->StateTable.AddData(device->StateGripper, interfaceName + "StateGripper");
         this->StateTable.AddData(device->ForceCartesian, interfaceName + "ForceCartesian");
         this->StateTable.AddData(device->Buttons, interfaceName + "Buttons");
 
@@ -326,8 +328,6 @@ void mtsSensableHD::SetupInterfaces(void)
                                         "GetVelocityCartesian");
         _interface->AddCommandReadState(this->StateTable, device->StateJoint,
                                         "GetStateJoint");
-        _interface->AddCommandReadState(this->StateTable, device->StateGripper,
-                                        "GetStateGripper");
 
         // commands
         _interface->AddCommandWrite(&mtsSensableHDDevice::SetPositionGoalCartesian,
@@ -345,19 +345,28 @@ void mtsSensableHD::SetupInterfaces(void)
 
         // add a method to read the current state index
         _interface->AddCommandRead(&mtsStateTable::GetIndexReader, &StateTable,
-                                          "GetStateIndex");
+                                   "GetStateIndex");
 
         // Stats
         _interface->AddCommandReadState(this->StateTable, StateTable.PeriodStats,
-                                               "GetPeriodStatistics");
+                                        "GetPeriodStatistics");
 
         // robot State
         _interface->AddCommandWrite(&mtsSensableHDDevice::SetDesiredState,
-                                           device, "SetDesiredState", std::string(""));
+                                    device, "SetDesiredState", std::string(""));
         _interface->AddCommandRead(&mtsSensableHDDevice::GetDesiredState,
-                                          device, "GetDesiredState", std::string(""));
+                                   device, "GetDesiredState", std::string(""));
         _interface->AddCommandRead(&mtsSensableHDDevice::GetCurrentState,
-                                          device, "GetCurrentState", std::string(""));
+                                   device, "GetCurrentState", std::string(""));
+
+        // configuration
+        this->mStateTableConfiguration.AddData(device->ConfigurationJoint, interfaceName + "ConfigurationJoint");
+        this->AddStateTable(&mStateTableConfiguration);
+        this->mStateTableConfiguration.SetAutomaticAdvance(false);
+        this->mStateTableConfiguration.Start();
+        this->mStateTableConfiguration.Advance();
+        _interface->AddCommandReadState(this->mStateTableConfiguration, device->ConfigurationJoint,
+                                        "GetConfigurationJoint");
 
         // Add interfaces for button with events
         providedInterface = this->AddInterfaceProvided(interfaceName + "Button1");

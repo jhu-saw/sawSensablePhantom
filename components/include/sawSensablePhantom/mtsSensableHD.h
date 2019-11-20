@@ -5,7 +5,7 @@
   Author(s): Anton Deguet
   Created on: 2008-04-04
 
-  (C) Copyright 2008-2017 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2008-2019 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -38,12 +38,14 @@ public:
     /*! Default constructor, will use the default device connected and
       create and interface named "Default Arm" */
     inline mtsSensableHD(const std::string & componentName):
-        mtsTaskFromCallbackAdapter(componentName, 5000)
+        mtsTaskFromCallbackAdapter(componentName, 5000),
+        mStateTableConfiguration(100, "Configuration")
     {
     }
 
     inline mtsSensableHD(const mtsTaskConstructorArg & arg):
-        mtsTaskFromCallbackAdapter(arg)
+        mtsTaskFromCallbackAdapter(arg),
+        mStateTableConfiguration(100, "Configuration")
     {
     }
 
@@ -60,6 +62,7 @@ public:
 
 protected:
 
+    mtsStateTable mStateTableConfiguration;
     typedef std::vector<mtsSensableHDDevice *> DevicesType;
     DevicesType mDevices;
     typedef std::vector<mtsSensableHDHandle *> HandlesType;
