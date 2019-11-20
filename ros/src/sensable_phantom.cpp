@@ -136,7 +136,7 @@ int main(int argc, char * argv[])
 
         // Qt Widgets
 
-        // state (joint & cartesian
+        // state (joint & cartesian)
         prmStateRobotQtWidgetComponent * stateWidget
             = new prmStateRobotQtWidgetComponent("Sensable-" + name + "-StateWidget");
         stateWidget->SetPrismaticRevoluteFactors(1.0 / cmn_mm, cmn180_PI);
