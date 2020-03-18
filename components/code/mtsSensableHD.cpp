@@ -5,7 +5,7 @@
   Author(s): Anton Deguet
   Created on: 2008-04-04
 
-  (C) Copyright 2008-2019 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2008-2020 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -32,6 +32,7 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstParameterTypes/prmPositionCartesianGet.h>
 #include <cisstParameterTypes/prmVelocityCartesianGet.h>
 #include <cisstParameterTypes/prmStateJoint.h>
+#include <cisstParameterTypes/prmConfigurationJoint.h>
 #include <cisstParameterTypes/prmForceCartesianSet.h>
 #include <cisstParameterTypes/prmPositionCartesianSet.h>
 #include <cisstParameterTypes/prmEventButton.h>
@@ -55,20 +56,31 @@ public:
     mtsFunctionWrite m_operating_state_event;
 
     inline void state_command(const std::string & command) {
-        if (command == "enable") {
-            m_operating_state.State() = prmOperatingState::ENABLED;
-        } else if (command == "disable") {
-            m_operating_state.State() = prmOperatingState::DISABLED;
-        } else {
-            m_interface->SendStatus(this->m_name + ": state command \""
-                                    + command + "\" is not supported yet");
+        std::string humanReadableMessage;
+        prmOperatingState::StateType newOperatingState;
+        try {
+            if (m_operating_state.ValidCommand(prmOperatingState::CommandTypeFromString(command),
+                                               newOperatingState, humanReadableMessage)) {
+                if (command == "enable") {
+                    m_operating_state.State() = prmOperatingState::ENABLED;
+                } else if (command == "disable") {
+                    m_operating_state.State() = prmOperatingState::DISABLED;
+                } else {
+                    m_interface->SendStatus(this->m_name + ": state command \""
+                                            + command + "\" is not supported yet");
+                }
+                // always emit event with current device state
+                m_interface->SendStatus(this->m_name
+                                        + ": current state is \""
+                                        + prmOperatingState::StateTypeToString(m_operating_state.State()) + "\"");
+                m_operating_state.Valid() = true;
+                m_operating_state_event(m_operating_state);
+            } else {
+                m_interface->SendWarning(this->m_name + ": " + humanReadableMessage);
+            }
+        } catch (std::runtime_error & e) {
+            m_interface->SendWarning(this->m_name + ": " + command + " doesn't seem to be a valid state_command (" + e.what() + ")");
         }
-        // always emit event with current device state
-        m_interface->SendStatus(this->m_name
-                                + ": current state is \""
-                                + prmOperatingState::EnumToString(m_operating_state.State()) + "\"");
-        m_operating_state.Valid() = true;
-        m_operating_state_event(m_operating_state);
     }
 
     inline void servo_cf(const prmForceCartesianSet & wrench) {
@@ -88,6 +100,7 @@ public:
     prmPositionCartesianGet m_measured_cp;
     prmVelocityCartesianGet m_measured_cv;
     prmStateJoint m_measured_js;
+    prmConfigurationJoint m_configuration_j;
     vctDynamicVectorRef<double> GimbalPositionJointRef, GimbalEffortJointRef;
 
     // mtsFunction called to broadcast the event
@@ -297,12 +310,15 @@ void mtsSensableHD::SetupInterfaces(void)
         device->m_measured_js.Name().at(3) = "Yaw";
         device->m_measured_js.Name().at(4) = "Pitch";
         device->m_measured_js.Name().at(5) = "Roll";
-        device->m_measured_js.Type().SetSize(NB_JOINTS);
-        device->m_measured_js.Type().SetAll(PRM_JOINT_REVOLUTE);
         device->m_measured_js.Position().SetSize(NB_JOINTS);
         device->GimbalPositionJointRef.SetRef(device->m_measured_js.Position(), 3, 3);
         device->m_measured_js.Effort().SetSize(NB_JOINTS);
         device->GimbalEffortJointRef.SetRef(device->m_measured_js.Effort(), 3, 3);
+
+        device->m_configuration_j.Name() = device->m_measured_js.Name();
+        device->m_configuration_j.Type().SetSize(NB_JOINTS);
+        device->m_configuration_j.Type().SetAll(PRM_JOINT_REVOLUTE);
+        device->m_configuration_j.Valid() = true;
 
         device->m_measured_cp.Valid() = false;
         device->m_measured_cp.SetReferenceFrame(device->m_name + "_base");
@@ -364,6 +380,16 @@ void mtsSensableHD::SetupInterfaces(void)
                                       "operating_state");
         provided->AddEventWrite(device->m_operating_state_event, "operating_state",
                                 prmOperatingState());
+
+        // configuration
+        this->mStateTableConfiguration.AddData(device->m_configuration_j,
+                                               device->m_name + "ConfigurationJoint");
+        this->AddStateTable(&mStateTableConfiguration);
+        this->mStateTableConfiguration.SetAutomaticAdvance(false);
+        this->mStateTableConfiguration.Start();
+        this->mStateTableConfiguration.Advance();
+        provided->AddCommandReadState(this->mStateTableConfiguration, device->m_configuration_j,
+                                      "GetConfigurationJoint");
 
         // Add interfaces for button with events
         provided = this->AddInterfaceProvided(device->m_name + "Button1");
