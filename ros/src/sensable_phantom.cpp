@@ -5,7 +5,7 @@
   Author(s):  Anton Deguet
   Created on: 2017-03-21
 
-  (C) Copyright 2017-2019 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2017-2020 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -42,28 +42,27 @@ int main(int argc, char * argv[])
     cmnLogger::SetMaskClassMatching("mtsSensable", CMN_LOG_ALLOW_ALL);
     cmnLogger::AddChannel(std::cerr, CMN_LOG_ALLOW_ERRORS_AND_WARNINGS);
 
-    // remove ROS args
-    ros::V_string argout;
-    ros::removeROSArgs(argc, argv, argout);
-    argc = argout.size();
+    // create ROS node handle
+    ros::init(argc, argv, "dvrk", ros::init_options::AnonymousName);
+    ros::NodeHandle rosNodeHandle;
 
     // parse options
     cmnCommandLineOptions options;
     std::string jsonConfigFile = "";
     double rosPeriod = 2.0 * cmn_ms;
-    std::string rosNamespace = "/sensable/";
+    std::list<std::string> managerConfig;
 
     options.AddOptionOneValue("j", "json-config",
                               "json configuration file",
                               cmnCommandLineOptions::REQUIRED_OPTION, &jsonConfigFile);
-
     options.AddOptionOneValue("p", "ros-period",
                               "period in seconds to read all tool positions (default 0.002, 2 ms, 500Hz).  There is no point to have a period higher than the device",
                               cmnCommandLineOptions::OPTIONAL_OPTION, &rosPeriod);
-
-    options.AddOptionOneValue("n", "ros-namespace",
-                              "ROS namespace to prefix all topics, must have start and end \"/\" (default /sensable/)",
-                              cmnCommandLineOptions::OPTIONAL_OPTION, &rosNamespace);
+    options.AddOptionMultipleValues("m", "component-manager",
+                                    "JSON files to configure component manager",
+                                    cmnCommandLineOptions::OPTIONAL_OPTION, &managerConfig);
+    options.AddOptionNoValue("D", "dark-mode",
+                             "replaces the default Qt palette with darker colors");
 
     // check that all required options have been provided
     std::string errorMessage;
@@ -85,15 +84,19 @@ int main(int argc, char * argv[])
     componentManager->AddComponent(device);
 
     // ROS bridge for publishers
-    mtsROSBridge * pub_bridge = new mtsROSBridge("sensable_pub", rosPeriod, true);
-    // separate thread to spin, i.e. subscribe
-    mtsROSBridge * spin_bridge = new mtsROSBridge("sensable_spin", 0.1 * cmn_ms, true, false);
+    mtsROSBridge * pub_bridge = new mtsROSBridge("sensable_pub", rosPeriod, &rosNodeHandle);
+    // separate thread to spin, i.e. subscribe and events
+    mtsROSBridge * spin_bridge = new mtsROSBridge("sensable_spin", 0.1 * cmn_ms, &rosNodeHandle);
+    spin_bridge->PerformsSpin(true);
     componentManager->AddComponent(pub_bridge);
     componentManager->AddComponent(spin_bridge);
 
     // create a Qt user interface
     QApplication application(argc, argv);
     cmnQt::QApplicationExitsOnCtrlC();
+    if (options.IsSet("dark-mode")) {
+        cmnQt::SetDarkMode();
+    }
 
     // organize all widgets in a tab widget
     QTabWidget * tabWidget = new QTabWidget;
@@ -104,8 +107,9 @@ int main(int argc, char * argv[])
     for (size_t index = 0;
          index < devices.size();
          ++index) {
+        // ROS namespace
         std::string name = devices.at(index);
-        std::string deviceNamespace = rosNamespace + name + "/";
+        std::string deviceNamespace = name + "/";
         std::replace(deviceNamespace.begin(), deviceNamespace.end(), ' ', '_');
         std::replace(deviceNamespace.begin(), deviceNamespace.end(), '-', '_');
         std::replace(deviceNamespace.begin(), deviceNamespace.end(), '.', '_');
@@ -195,12 +199,17 @@ int main(int argc, char * argv[])
         tabWidget->addTab(systemWidget, QString(name.c_str()) + " system");
     }
 
+    // custom user components
+    if (!componentManager->ConfigureJSON(managerConfig)) {
+        CMN_LOG_INIT_ERROR << "Configure: failed to configure component-manager, check cisstLog for error messages" << std::endl;
+        return -1;
+    }
+
     // create and start all components
     componentManager->CreateAllAndWait(5.0 * cmn_s);
     componentManager->StartAllAndWait(5.0 * cmn_s);
 
     // run Qt user interface
-    cmnQt::QApplicationExitsOnCtrlC();
     tabWidget->show();
     application.exec();
 
@@ -209,6 +218,9 @@ int main(int argc, char * argv[])
     componentManager->Cleanup();
 
     cmnLogger::Kill();
+
+    // stop ROS node
+    ros::shutdown();
 
     return 0;
 }
