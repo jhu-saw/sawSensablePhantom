@@ -1,12 +1,10 @@
 # sawSensablePhantom
 
-This SAW component contains code for interfacing with many NDI tracking devices (Northern Digital Inc, https://www.ndigital.com/).  It compiles on Windows, Linux and likely MacOS.  It has been tested with:
-  * Linux and Windows
-  * NDI Polaris (old generation), Spectra and Vicra
+This SAW component contains code for interfacing with the Sensable Phantom Omni.  It compiles on Windows and Linux.  It has been tested with:
+  * Linux Ubuntu 16.04 and 18.04 and Windows
+  * Sensable Phantom Omni 1394 but it might work with other haptic devices from Sensable or 3DS (assuming the C API is the same)
 
-The `ros` folder contains code for a ROS node that interfaces with the sawNDITracker component and publishes the 3D transformations of each tracked tool as well as a point cloud for all stray markers.  It also broadcasts transformations for `tf2`.  To build the ROS node, make sure you use `catkin build`.
-
-If needed, one can also add OpenIGTLink support using sawOpenIGTLink (contact the sawNDITracker developers if you need help with this).
+The `ros` folder contains code for a ROS node that interfaces with the sawSensablePhantom component and publishes the 3D transformations, joint positions and efforts, buttons...  It also has subscribers to control the Omni (i.e. set cartesian wrench).  To build the ROS node, make sure you use `catkin build`.
 
 # Links
  * License: http://github.com/jhu-cisst/cisst/blob/master/license.txt
@@ -19,17 +17,25 @@ If needed, one can also add OpenIGTLink support using sawOpenIGTLink (contact th
  
 # Running the examples
  
-## Linux permissions
+## Linux installation
+
+The first thing to do is to install the drivers.  The vendor's version is rather old and incompatible with most recent Linux distributions.  You can find plenty of how-tos online to patch the driver installation but these tend to be incomplete.  So we created a nifty little script to do the work:  https://github.com/jhu-cisst-external/phantom-omni-1394-drivers
  
-NDI trackers use a serial port to communicate.  When connecting your tracker to your computer, a pseudo device will be added to the `/dev` directory.   Usually something like `/dev/ttyS01`, `/dev/ttyUSB0` or `/dev/ttyACM0`.  Using the command `dmesg` can help identify which device is used.  Check the file permissions on said device, e.g.,
-```sh
-ls -al /dev/ttyUSB0 
-crw-rw---- 1 root dialout 188, 0 Jan  3 09:32 /dev/ttyUSB0
+The Phantom Omni uses a FireWire port to communicate.  When connecting your tracker to your computer, a pseudo device will be added to the `/dev` directory.   Usually something like `/dev/fw1`, `/dev/fw2` or higher.  Using the command `dmesg -w` can help identify which device is used.  First start `dmesg -w` in a terminal, then plug your device.  You should see something like: 
 ```
-On Ubuntu, the OS usually sets the ownership of `/dev/ttyUSB0` to `root` and the group to `dialout`.   To grant permissions to read and write to the device, use the command `sudo adduser <user_id> dialout` to add users to the `dialout` group.   Please note that the user has to logout/login for the new group membership to take effect.
+[33217.952060] firewire_core 0000:04:00.0: phy config: new root=ffc1, gap_count=5
+[33224.507217] firewire_core 0000:04:00.0: phy config: new root=ffc1, gap_count=5
+[33224.691773] firewire_core 0000:04:00.0: created device fw1: GUID 000b990082b6980c, S400
+```
+Check the file permissions on said device, e.g.,
+```sh
+crw------- 1 root root    243, 0 Mar 22 14:10 /dev/fw0
+crw-rw---- 1 root plugdev 243, 1 Mar 23 18:19 /dev/fw1
+```
+By default the drivers are configured so the OS sets the ownership of `/dev/fw1` to `root` and the group to `plugdev`.   To grant permissions to read and write to the device, use the command `sudo adduser <user_id> plugdev` to add users to the `plugdev` group.   Please note that the user has to logout/login for the new group membership to take effect.
  
 ## Main example
- 
+
 The main example provided is `sawNDITrackerQtExample`.  The command line options are:
 ```sh
 sawNDITrackerQtExample:
