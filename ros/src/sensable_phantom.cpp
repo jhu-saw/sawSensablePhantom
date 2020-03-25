@@ -107,16 +107,6 @@ int main(int argc, char * argv[])
         crtk_bridge->bridge_interface_provided(device->GetName(),
                                                name,
                                                rosPeriod);
-#if 0
-        // buttons
-        spin_bridge->AddPublisherFromEventWrite<prmEventButton, sensor_msgs::Joy>
-            (name + "Button1", "Button",
-             deviceNamespace + "button_1");
-        spin_bridge->AddPublisherFromEventWrite<prmEventButton, sensor_msgs::Joy>
-            (name + "Button2", "Button",
-             deviceNamespace + "button_2");
-#endif
-
         // Qt Widgets
 
         // state (joint & cartesian)

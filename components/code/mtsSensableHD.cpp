@@ -180,6 +180,7 @@ void mtsSensableHD::Run(void)
         if (current_buttons != device->m_buttons) {
             int currentButtonState, previousButtonState;
             prmEventButton event;
+            event.Valid() = true;
             // test for button 1
             currentButtonState = current_buttons & HD_DEVICE_BUTTON_1;
             previousButtonState = device->m_buttons & HD_DEVICE_BUTTON_1;
