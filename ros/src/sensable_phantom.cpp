@@ -26,8 +26,7 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstParameterTypes/prmStateRobotQtWidget.h>
 #include <sawSensablePhantom/mtsSensableHD.h>
 
-#include <ros/ros.h>
-#include <cisst_ros_bridge/mtsROSBridge.h>
+#include <cisst_ros_crtk/mts_ros_crtk_bridge.h>
 
 #include <QApplication>
 #include <QMainWindow>
@@ -43,7 +42,7 @@ int main(int argc, char * argv[])
     cmnLogger::AddChannel(std::cerr, CMN_LOG_ALLOW_ERRORS_AND_WARNINGS);
 
     // create ROS node handle
-    ros::init(argc, argv, "dvrk", ros::init_options::AnonymousName);
+    ros::init(argc, argv, "sensable_phantom", ros::init_options::AnonymousName);
     ros::NodeHandle rosNodeHandle;
 
     // parse options
@@ -83,13 +82,10 @@ int main(int argc, char * argv[])
     mtsManagerLocal * componentManager = mtsComponentManager::GetInstance();
     componentManager->AddComponent(device);
 
-    // ROS bridge for publishers
-    mtsROSBridge * pub_bridge = new mtsROSBridge("sensable_pub", rosPeriod, &rosNodeHandle);
-    // separate thread to spin, i.e. subscribe and events
-    mtsROSBridge * spin_bridge = new mtsROSBridge("sensable_spin", 0.1 * cmn_ms, &rosNodeHandle);
-    spin_bridge->PerformsSpin(true);
-    componentManager->AddComponent(pub_bridge);
-    componentManager->AddComponent(spin_bridge);
+    // ROS CRTK bridge
+    mts_ros_crtk_bridge * crtk_bridge
+        = new mts_ros_crtk_bridge("sensable_phantom_crtk_bridge", &rosNodeHandle);
+    componentManager->AddComponent(crtk_bridge);
 
     // create a Qt user interface
     QApplication application(argc, argv);
@@ -107,27 +103,11 @@ int main(int argc, char * argv[])
     for (size_t index = 0;
          index < devices.size();
          ++index) {
-        // ROS namespace
         std::string name = devices.at(index);
-        std::string deviceNamespace = name + "/";
-        std::replace(deviceNamespace.begin(), deviceNamespace.end(), ' ', '_');
-        std::replace(deviceNamespace.begin(), deviceNamespace.end(), '-', '_');
-        std::replace(deviceNamespace.begin(), deviceNamespace.end(), '.', '_');
-
-        // motion commands
-        pub_bridge->AddPublisherFromCommandRead<prmStateJoint, sensor_msgs::JointState>
-            (name, "measured_js",
-             deviceNamespace + "measured_js");
-        pub_bridge->AddPublisherFromCommandRead<prmPositionCartesianGet, geometry_msgs::TransformStamped>
-            (name, "measured_cp",
-             deviceNamespace + "measured_cp");
-        pub_bridge->AddPublisherFromCommandRead<prmVelocityCartesianGet, geometry_msgs::TwistStamped>
-            (name, "measured_cv",
-             deviceNamespace + "measured_cv");
-        spin_bridge->AddSubscriberToCommandWrite<prmForceCartesianSet, geometry_msgs::WrenchStamped>
-            (name, "servo_cf",
-             deviceNamespace + "servo_cf");
-
+        crtk_bridge->bridge_interface_provided(device->GetName(),
+                                               name,
+                                               rosPeriod);
+#if 0
         // buttons
         spin_bridge->AddPublisherFromEventWrite<prmEventButton, sensor_msgs::Joy>
             (name + "Button1", "Button",
@@ -135,35 +115,7 @@ int main(int argc, char * argv[])
         spin_bridge->AddPublisherFromEventWrite<prmEventButton, sensor_msgs::Joy>
             (name + "Button2", "Button",
              deviceNamespace + "button_2");
-
-        // device state
-        spin_bridge->AddSubscriberToCommandWrite<std::string, std_msgs::String>
-            (name, "state_command",
-             deviceNamespace + "state_command");
-        spin_bridge->AddPublisherFromEventWrite<prmOperatingState, crtk_msgs::operating_state>
-            (name, "operating_state",
-             deviceNamespace + "operating_state");
-        spin_bridge->AddServiceFromCommandRead<prmOperatingState, crtk_msgs::trigger_operating_state>
-            (name, "operating_state",
-             deviceNamespace + "operating_state");
-
-        // messages
-        spin_bridge->AddLogFromEventWrite(name, "Error",
-                                          mtsROSEventWriteLog::ROS_LOG_ERROR);
-        spin_bridge->AddLogFromEventWrite(name, "Warning",
-                                          mtsROSEventWriteLog::ROS_LOG_WARN);
-        spin_bridge->AddLogFromEventWrite(name, "Status",
-                                          mtsROSEventWriteLog::ROS_LOG_INFO);
-
-        // connect the bridge after all interfaces have been created
-        componentManager->Connect(pub_bridge->GetName(), name,
-                                  device->GetName(), name);
-        componentManager->Connect(spin_bridge->GetName(), name,
-                                  device->GetName(), name);
-        componentManager->Connect(spin_bridge->GetName(), name + "Button1",
-                                  device->GetName(), name + "Button1");
-        componentManager->Connect(spin_bridge->GetName(), name + "Button2",
-                                  device->GetName(), name + "Button2");
+#endif
 
         // Qt Widgets
 
