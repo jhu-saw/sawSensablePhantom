@@ -1,5 +1,5 @@
 #
-# (C) Copyright 2011-2017 Johns Hopkins University (JHU), All Rights
+# (C) Copyright 2011-2020 Johns Hopkins University (JHU), All Rights
 # Reserved.
 #
 # --- begin cisst license - do not edit ---
@@ -74,15 +74,22 @@ if (cisst_FOUND_AS_REQUIRED)
                     "${CMAKE_CURRENT_BINARY_DIR}/include/sawSensablePhantom/sawSensablePhantomRevision.h")
 
     include_directories (${SENSABLE_INCLUDE_DIR} ${sawSensablePhantom_INCLUDE_DIR})
+    set (sawSensablePhantom_HEADER_DIR "${sawSensablePhantom_SOURCE_DIR}/include/sawSensablePhantom")
 
     add_library (sawSensablePhantom ${IS_SHARED}
-                 include/sawSensablePhantom/sawSensablePhantomExport.h
-                 include/sawSensablePhantom/mtsSensableHD.h
+                 ${sawSensablePhantom_HEADER_DIR}/sawSensablePhantomExport.h
+                 ${sawSensablePhantom_HEADER_DIR}/mtsSensableHD.h
                  code/mtsSensableHD.cpp
                  )
     set_property (TARGET sawSensablePhantom PROPERTY FOLDER "sawSensablePhantom")
     target_link_libraries (sawSensablePhantom ${SENSABLE_LIBRARIES})
     cisst_target_link_libraries (sawSensablePhantom ${REQUIRED_CISST_LIBRARIES})
+
+    # add Qt code
+    if (CISST_HAS_QT)
+      add_subdirectory (code/Qt)
+      set (sawSensablePhantom_LIBRARIES ${sawSensablePhantom_LIBRARIES} ${sawSensablePhantomQt_LIBRARIES})
+    endif (CISST_HAS_QT)
 
     set (sawSensablePhantom_CMAKE_CONFIG_FILE
          "${sawSensablePhantom_CONFIG_FILE_DIR}/sawSensablePhantomConfig.cmake")

@@ -89,6 +89,12 @@ public:
         }
     }
 
+    inline void get_button_names(std::list<std::string> & placeholder) const {
+        placeholder.clear();
+        placeholder.push_back(m_name + "Button1");
+        placeholder.push_back(m_name + "Button2");
+    }
+
     mtsInterfaceProvided * m_interface;
 
     bool m_device_available;
@@ -391,6 +397,8 @@ void mtsSensableHD::SetupInterfaces(void)
         this->mStateTableConfiguration.Advance();
         provided->AddCommandReadState(this->mStateTableConfiguration, device->m_configuration_j,
                                       "GetConfigurationJoint");
+        provided->AddCommandRead(&mtsSensableHDDevice::get_button_names,
+                                 device, "get_button_names");
 
         // Add interfaces for button with events
         provided = this->AddInterfaceProvided(device->m_name + "Button1");

@@ -21,10 +21,8 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstCommon/cmnCommandLineOptions.h>
 #include <cisstCommon/cmnQt.h>
 #include <cisstMultiTask/mtsTaskManager.h>
-#include <cisstMultiTask/mtsSystemQtWidget.h>
-#include <cisstParameterTypes/prmEventButtonQtWidget.h>
-#include <cisstParameterTypes/prmStateRobotQtWidget.h>
 #include <sawSensablePhantom/mtsSensableHD.h>
+#include <sawSensablePhantom/mtsSensableHDQtWidget.h>
 
 #include <cisst_ros_crtk/mts_ros_crtk_bridge.h>
 
@@ -75,12 +73,12 @@ int main(int argc, char * argv[])
     std::cout << "Options provided:" << std::endl << arguments << std::endl;
 
     // create the components
-    mtsSensableHD * device = new mtsSensableHD("SensableHD");
-    device->Configure(jsonConfigFile);
+    mtsSensableHD * devices = new mtsSensableHD("SensableHD");
+    devices->Configure(jsonConfigFile);
 
     // add the components to the component manager
     mtsManagerLocal * componentManager = mtsComponentManager::GetInstance();
-    componentManager->AddComponent(device);
+    componentManager->AddComponent(devices);
 
     // ROS CRTK bridge
     mts_ros_crtk_bridge * crtk_bridge
@@ -96,49 +94,24 @@ int main(int argc, char * argv[])
 
     // organize all widgets in a tab widget
     QTabWidget * tabWidget = new QTabWidget;
+    mtsSensableHDQtWidget * deviceWidget;
 
     // configure all components
-    std::vector<std::string> devices;
-    devices = device->DeviceNames(); // get names of all sensable devices
+    std::vector<std::string> deviceNames;
+    deviceNames = devices->DeviceNames(); // get names of all sensable devices
     for (size_t index = 0;
-         index < devices.size();
+         index < deviceNames.size();
          ++index) {
-        std::string name = devices.at(index);
-        crtk_bridge->bridge_interface_provided(device->GetName(),
+        std::string name = deviceNames.at(index);
+        deviceWidget = new mtsSensableHDQtWidget(name + "-gui");
+        deviceWidget->Configure();
+        componentManager->AddComponent(deviceWidget);
+        componentManager->Connect(deviceWidget->GetName(), "Device",
+                                  devices->GetName(), name);
+        tabWidget->addTab(deviceWidget, name.c_str());
+        crtk_bridge->bridge_interface_provided(devices->GetName(),
                                                name,
                                                rosPeriod);
-        // Qt Widgets
-
-        // state (joint & cartesian)
-        prmStateRobotQtWidgetComponent * stateWidget
-            = new prmStateRobotQtWidgetComponent("Sensable-" + name + "-StateWidget");
-        stateWidget->SetPrismaticRevoluteFactors(1.0 / cmn_mm, cmn180_PI);
-        stateWidget->Configure();
-        componentManager->AddComponent(stateWidget);
-        componentManager->Connect(stateWidget->GetName(), "Component",
-                                  device->GetName(), name);
-        tabWidget->addTab(stateWidget, QString(name.c_str()) + " state");
-
-        // buttons
-        prmEventButtonQtWidgetComponent * buttonsWidget
-            = new prmEventButtonQtWidgetComponent("Sensable-" + name + "-ButtonsWidget");
-        buttonsWidget->AddEventButton(name + "Button1");
-        buttonsWidget->AddEventButton(name + "Button2");
-        componentManager->AddComponent(buttonsWidget);
-        componentManager->Connect(buttonsWidget->GetName(), name + "Button1",
-                                  device->GetName(), name + "Button1");
-        componentManager->Connect(buttonsWidget->GetName(), name + "Button2",
-                                  device->GetName(), name + "Button2");
-        tabWidget->addTab(buttonsWidget, QString(name.c_str()) + " buttons");
-
-        // system info (timing and messages)
-        mtsSystemQtWidgetComponent * systemWidget
-            = new mtsSystemQtWidgetComponent("Sensable-" + name + "-SystemWidget");
-        systemWidget->Configure();
-        componentManager->AddComponent(systemWidget);
-        componentManager->Connect(systemWidget->GetName(), "Component",
-                                  device->GetName(), name);
-        tabWidget->addTab(systemWidget, QString(name.c_str()) + " system");
     }
 
     // custom user components
