@@ -92,14 +92,6 @@ Then you can start tracking:
 
 If you unplug/replug an active tool, you might have to hit the `(Re)initialize` button and then turn tracking back on.
 
-## Python
-
-Since `cisstMultiTask` has a nice Python interface it is possible to use the `sawNDITracker` from Python.  Make sure you compiled `cisst` with the CMake option `CISST_HAS_SWIG_PYTHON` and you've sourced `cisstvars.sh` so you can find the `cisstMultiTaskPython` module.
-
-```sh
-cisst-saw/sawNDITracker/examples$ ./mainPython.py --port /dev/ttyUSB0 --json ../share/ndi-active-tools.json
-```
-
 ## ROS
 
 Please read the section above for the configuration file description.  The ROS node is `ndi_tracker` and can be found in the package `ndi_tracker_ros`:
@@ -129,18 +121,3 @@ Once the node is started AND connected, the following ROS topics should appear:
 ```
 
 The topic names for the tools are based on the names in the configuration file or the unique ID if there is no configuration file specified.
-
-You can also visualize the tf2 output using:
-```sh
-rosrun tf2_tools view_frames.py
-evince frames.pdf 
-```
-
-In our example, the `Base` is defined with respect to the `Camera` and the `Pointer` is defined with respect to the `Base`:
-![tf2](doc/frames.png "tf2")
-
-# Notes
-
-## Units
-
-By default NDI API reports distances in millimeters.   The `cisst` libraries used to implicitly rely on millimeters and grams but can now be configured to report distances in (preferred) SI units (i.e., meter, kg, N).   This setting can be changed in CMake while configuring `cisst` by setting the variable `CISST_USE_SI`.   The default is `CISST_USE_SI` is `0` (false) except when compiling with ROS catkin build tools (the default with ROS for `CISST_USE_SI` is `1`).   In your code, you can include `cisstConfig.h` and use the preprocessor variable `CISST_USE_SI` to handle both cases.   When running your program, you can also look at the `cisstLog.txt` file, it will contain a line indicating if `CISST_USE_SI` is true or false.
