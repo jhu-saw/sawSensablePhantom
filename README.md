@@ -45,6 +45,12 @@ In the application, select the *PHANToM Model*.  You should see a serial number 
 
 In theory, one should be able to have multiple Phantom Omnis on a single computer but so far we were not able to do this on Linux.   If you do figure out a solution, please let us know.   As a stop gap solution, one can use ROS as middleware and 2 computers, one for each Omni. 
 
+## Compilation
+
+This code is part of the cisst-SAW libraries and components.  Once the drivers are installed, you can follow the *cisst-SAW* compilation instructions: https://github.com/jhu-cisst/cisst/wiki/Compiling-cisst-and-SAW-with-CMake.
+
+For Linux users, we strongly recommend to compile with ROS and the python catkin build tools (i.e. `catkin build`, NOT `catkin_make`).  Detailled instructions can be found on https://github.com/jhu-cisst/cisst/wiki/Compiling-cisst-and-SAW-with-CMake#13-building-using-catkin-build-tools-for-ros.
+
 ## Main example
 
 The main example provided is `sawSensablePhantomQtExample`.  The command line options are:
@@ -105,4 +111,3 @@ Once the node is started AND connected, the following ROS topics should appear:
 /stats/publishers_left/period_statistics
 /stats/subscribers/period_statistics
 ```
-
