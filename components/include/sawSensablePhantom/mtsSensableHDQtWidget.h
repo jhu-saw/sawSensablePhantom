@@ -54,7 +54,6 @@ class CISST_EXPORT mtsSensableHDQtWidget : public QWidget, public mtsComponent
 
  private slots:
     void timerEvent(QTimerEvent * event);
-    void SlotGravityCompensation(void);
 
  private:
     //! setup GUI
@@ -70,8 +69,7 @@ class CISST_EXPORT mtsSensableHDQtWidget : public QWidget, public mtsComponent
         mtsFunctionRead measured_cf;
         mtsFunctionRead measured_js;
         mtsFunctionWrite servo_cf;
-        mtsFunctionWrite SetGravityCompensation;
-        mtsFunctionRead GetPeriodStatistics;
+        mtsFunctionRead period_statistics;
         mtsFunctionRead get_button_names;
     } Device;
 

@@ -31,6 +31,7 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstParameterTypes/prmOperatingState.h>
 #include <cisstParameterTypes/prmPositionCartesianGet.h>
 #include <cisstParameterTypes/prmVelocityCartesianGet.h>
+#include <cisstParameterTypes/prmForceCartesianGet.h>
 #include <cisstParameterTypes/prmStateJoint.h>
 #include <cisstParameterTypes/prmConfigurationJoint.h>
 #include <cisstParameterTypes/prmForceCartesianSet.h>
@@ -105,8 +106,9 @@ public:
     // local copy of the position and velocities
     prmPositionCartesianGet m_measured_cp;
     prmVelocityCartesianGet m_measured_cv;
+    prmForceCartesianGet m_measured_cf;
     prmStateJoint m_measured_js;
-    prmConfigurationJoint m_configuration_j;
+    prmConfigurationJoint m_configuration_js;
     vctDynamicVectorRef<double> GimbalPositionJointRef, GimbalEffortJointRef;
 
     // mtsFunction called to broadcast the event
@@ -122,7 +124,6 @@ public:
     vctFixedSizeConstMatrixRef<double, 3, 3,
                                Frame4x4Type::ROWSTRIDE, Frame4x4Type::COLSTRIDE> Frame4x4RotationRef;
 
-    bool Clutch;
     std::string m_name;
 };
 
@@ -147,22 +148,24 @@ void mtsSensableHD::Run(void)
 
         // get the current cartesian position of the device
         hdGetDoublev(HD_CURRENT_TRANSFORM, device->Frame4x4.Pointer());
-
         // retrieve cartesian velocities, write directly in state data
         hdGetDoublev(HD_CURRENT_VELOCITY,
                      device->m_measured_cv.VelocityLinear().Pointer());
         device->m_measured_cv.VelocityLinear().Multiply(cmn_mm);
         hdGetDoublev(HD_CURRENT_ANGULAR_VELOCITY,
                      device->m_measured_cv.VelocityAngular().Pointer());
-
+        // retrieve forces
+        hdGetDoublev(HD_LAST_FORCE,
+                     device->m_measured_cf.Force().Pointer());
+    
         // retrieve joint positions and efforts, write directly in state data
         hdGetDoublev(HD_CURRENT_JOINT_ANGLES,
                      device->m_measured_js.Position().Pointer());
         hdGetDoublev(HD_CURRENT_GIMBAL_ANGLES,
                      device->GimbalPositionJointRef.Pointer());
-        hdGetDoublev(HD_CURRENT_JOINT_TORQUE,
+        hdGetDoublev(HD_LAST_JOINT_TORQUE,
                      device->m_measured_js.Effort().Pointer());
-        hdGetDoublev(HD_CURRENT_GIMBAL_TORQUE,
+        hdGetDoublev(HD_LAST_GIMBAL_TORQUE,
                      device->GimbalEffortJointRef.Pointer());
 
         // retrieve the current button(s).
@@ -204,10 +207,8 @@ void mtsSensableHD::Run(void)
             previousButtonState = device->m_buttons & HD_DEVICE_BUTTON_2;
             if (currentButtonState != previousButtonState) {
                 if (currentButtonState == 0) {
-                    device->Clutch = false;
                     event.SetType(prmEventButton::RELEASED);
                 } else {
-                    device->Clutch = true;
                     event.SetType(prmEventButton::PRESSED);
                 }
                 // throw the event
@@ -221,6 +222,7 @@ void mtsSensableHD::Run(void)
         device->m_measured_js.Valid() = true;
         device->m_measured_cp.Valid() = true;
         device->m_measured_cv.Valid() = true;
+        device->m_measured_cf.Valid() = true;
     }
 
     // check for errors and abort the callback if a scheduler error
@@ -235,6 +237,7 @@ void mtsSensableHD::Run(void)
             device->m_measured_js.Valid() = false;
             device->m_measured_cp.Valid() = false;
             device->m_measured_cv.Valid() = false;
+            device->m_measured_cf.Valid() = false;
             device->m_interface->SendError(device->m_name + ": fatal error in scheduler callback \""
                                            + hdGetErrorString(error.errorCode) + "\"");
         }
@@ -322,12 +325,11 @@ void mtsSensableHD::SetupInterfaces(void)
         device->m_measured_js.Effort().SetSize(NB_JOINTS);
         device->GimbalEffortJointRef.SetRef(device->m_measured_js.Effort(), 3, 3);
 
-        device->m_configuration_j.Name() = device->m_measured_js.Name();
-        device->m_configuration_j.Type().SetSize(NB_JOINTS);
-        device->m_configuration_j.Type().SetAll(PRM_JOINT_REVOLUTE);
-        device->m_configuration_j.Valid() = true;
+        device->m_configuration_js.Name() = device->m_measured_js.Name();
+        device->m_configuration_js.Type().SetSize(NB_JOINTS);
+        device->m_configuration_js.Type().SetAll(PRM_JOINT_REVOLUTE);
+        device->m_configuration_js.Valid() = true;
 
-        device->m_measured_cp.Valid() = false;
         device->m_measured_cp.SetReferenceFrame(device->m_name + "_base");
         device->m_measured_cp.SetMovingFrame(device->m_name);
         // set to zero
@@ -335,7 +337,7 @@ void mtsSensableHD::SetupInterfaces(void)
         device->m_measured_js.Effort().SetAll(0.0);
         device->m_measured_cv.VelocityLinear().SetAll(0.0);
         device->m_measured_cv.VelocityAngular().SetAll(0.0);
-        device->Clutch = false;
+        device->m_measured_cf.Force().SetAll(0.0);
 
         // create interface with the device name, i.e. the map key
         CMN_LOG_CLASS_INIT_DEBUG << "SetupInterfaces: creating interface \""
@@ -350,6 +352,7 @@ void mtsSensableHD::SetupInterfaces(void)
         this->StateTable.AddData(device->m_operating_state, device->m_name + "_operating_state");
         this->StateTable.AddData(device->m_measured_cp, device->m_name + "_measured_cp");
         this->StateTable.AddData(device->m_measured_cv, device->m_name + "_measured_cv");
+        this->StateTable.AddData(device->m_measured_cf, device->m_name + "_measured_cf");
         this->StateTable.AddData(device->m_measured_js, device->m_name + "_measured_js");
         this->StateTable.AddData(device->m_servo_cf, device->m_name + "_servo_cf");
         this->StateTable.AddData(device->m_buttons, device->m_name + "_buttons");
@@ -359,14 +362,10 @@ void mtsSensableHD::SetupInterfaces(void)
                                       "measured_cp");
         provided->AddCommandReadState(this->StateTable, device->m_measured_cv,
                                       "measured_cv");
+        provided->AddCommandReadState(this->StateTable, device->m_measured_cf,
+                                      "measured_cf");
         provided->AddCommandReadState(this->StateTable, device->m_measured_js,
                                       "measured_js");
-
-        // for backward compatibility, remove when cisst-SAW is crtk friendly
-        provided->AddCommandReadState(this->StateTable, device->m_measured_cp,
-                                      "GetPositionCartesian");
-        provided->AddCommandReadState(this->StateTable, device->m_measured_js,
-                                      "GetStateJoint");
 
         // commands
         provided->AddCommandWrite(&mtsSensableHDDevice::servo_cf,
@@ -378,7 +377,7 @@ void mtsSensableHD::SetupInterfaces(void)
 
         // stats
         provided->AddCommandReadState(this->StateTable, StateTable.PeriodStats,
-                                      "GetPeriodStatistics");
+                                      "period_statistics");
 
         // robot state
         provided->AddCommandWrite(&mtsSensableHDDevice::state_command,
@@ -389,14 +388,14 @@ void mtsSensableHD::SetupInterfaces(void)
                                 prmOperatingState());
 
         // configuration
-        this->mStateTableConfiguration.AddData(device->m_configuration_j,
+        this->mStateTableConfiguration.AddData(device->m_configuration_js,
                                                device->m_name + "ConfigurationJoint");
         this->AddStateTable(&mStateTableConfiguration);
         this->mStateTableConfiguration.SetAutomaticAdvance(false);
         this->mStateTableConfiguration.Start();
         this->mStateTableConfiguration.Advance();
-        provided->AddCommandReadState(this->mStateTableConfiguration, device->m_configuration_j,
-                                      "GetConfigurationJoint");
+        provided->AddCommandReadState(this->mStateTableConfiguration, device->m_configuration_js,
+                                      "configuration_js");
         provided->AddCommandRead(&mtsSensableHDDevice::get_button_names,
                                  device, "get_button_names");
 

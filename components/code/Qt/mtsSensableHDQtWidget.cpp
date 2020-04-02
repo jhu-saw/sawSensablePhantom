@@ -59,8 +59,7 @@ mtsSensableHDQtWidget::mtsSensableHDQtWidget(const std::string & componentName, 
         m_device_interface->AddFunction("measured_cf", Device.measured_cf);
         m_device_interface->AddFunction("measured_js", Device.measured_js);
         m_device_interface->AddFunction("servo_cf", Device.servo_cf);
-        m_device_interface->AddFunction("SetGravityCompensation", Device.SetGravityCompensation);
-        m_device_interface->AddFunction("GetPeriodStatistics", Device.GetPeriodStatistics);
+        m_device_interface->AddFunction("period_statistics", Device.period_statistics);
         m_device_interface->AddFunction("get_button_names", Device.get_button_names);
     }
 
@@ -149,11 +148,6 @@ void mtsSensableHDQtWidget::setupUi(void)
     componentManager->AddComponent(QPBWidgetComponent);
     controlLayout->addWidget(QPBWidgetComponent);
 
-    QPushButton * gravityCompensationButton = new QPushButton("Gravity compensation");
-    controlLayout->addWidget(gravityCompensationButton);
-    connect(gravityCompensationButton, SIGNAL(clicked()),
-            this, SLOT(SlotGravityCompensation()));
-
     controlLayout->addStretch();
 
     // system
@@ -203,13 +197,6 @@ void mtsSensableHDQtWidget::timerEvent(QTimerEvent * CMN_UNUSED(event))
         QSJWidget->SetValue(m_measured_js);
     }
 
-    Device.GetPeriodStatistics(IntervalStatistics);
+    Device.period_statistics(IntervalStatistics);
     QMIntervalStatistics->SetValue(IntervalStatistics);
-}
-
-void mtsSensableHDQtWidget::SlotGravityCompensation(void)
-{
-    Device.SetGravityCompensation(true);
-    prmForceCartesianSet wrench;
-    Device.servo_cf(wrench);
 }
