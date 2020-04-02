@@ -12,6 +12,7 @@ The `ros` folder contains code for a ROS node that interfaces with the sawSensab
 
 # Dependencies
  * cisst libraries: https://github.com/jhu-cisst/cisst
+ * Sensable SDK and drivers, see below
  * Qt for user interface
  * ROS (optional)
  
@@ -33,114 +34,80 @@ crw------- 1 root root    243, 0 Mar 22 14:10 /dev/fw0
 crw-rw---- 1 root plugdev 243, 1 Mar 23 18:19 /dev/fw1
 ```
 By default the drivers are configured so the OS sets the ownership of `/dev/fw1` to `root` and the group to `plugdev`.   To grant permissions to read and write to the device, use the command `sudo adduser <user_id> plugdev` to add users to the `plugdev` group.   Please note that the user has to logout/login for the new group membership to take effect.
- 
+
+## Configuration
+
+It is important to first run the Sensable provided configuration tool to make sure your device is properly detected and to name it.   To do so, you will have to run the `PHANToMConfiguration` program with admin privileges:
+```sh
+sudo PHANToMConfiguration
+```
+In the application, select the *PHANToM Model*.  You should see a serial number appear on the bottom right if everything is working fine.  Click *Add...* and then give your device a name (e.g. "left").  Don't forget to *Apply* before quitting using *Ok*.
+
+In theory, one should be able to have multiple Phantom Omnis on a single computer but so far we were not able to do this on Linux.   If you do figure out a solution, please let us know.   As a stop gap solution, one can use ROS as middleware and 2 computers, one for each Omni. 
+
+## Compilation
+
+This code is part of the cisst-SAW libraries and components.  Once the drivers are installed, you can follow the *cisst-SAW* compilation instructions: https://github.com/jhu-cisst/cisst/wiki/Compiling-cisst-and-SAW-with-CMake.
+
+For Linux users, we strongly recommend to compile with ROS and the python catkin build tools (i.e. `catkin build`, NOT `catkin_make`).  Detailled instructions can be found on https://github.com/jhu-cisst/cisst/wiki/Compiling-cisst-and-SAW-with-CMake#13-building-using-catkin-build-tools-for-ros.
+
 ## Main example
 
-The main example provided is `sawNDITrackerQtExample`.  The command line options are:
+The main example provided is `sawSensablePhantomQtExample`.  The command line options are:
 ```sh
-sawNDITrackerQtExample:
--j <value>, --json-config <value> : json configuration file (optional)
--s <value>, --serial-port <value> : serial port (e.g. /dev/ttyUSB0, COM...) (optional)
--l, --log-serial : log all serial port read/writes in cisstLog.txt (optional)
+sawSensablePhantomQtExample:
+ -j <value>, --json-config <value> : json configuration file (required)
+ -m, --component-manager : JSON files to configure component manager (optional)
+ -D, --dark-mode : replaces the default Qt palette with darker colors (optional)
 ```
 
-The JSON configuration file is optional.  It can be skipped if all your tools are active (i.e., If you need a more human readable name for your active tools, you'll need a JSON configuration files.  If you use any passive tool (i.e., reflective markers for optical trackers), you will need a JSON configuration file.
+For example:
+```sh
+sawSensablePhantomQtExample -D -j sawSensablePhantomLeft.json
+```
 
-Some examples of configuration files can be found in the `share` directory.  Here is an example for an active tool and a passive tool used on an older Polaris:
+The JSON configuration file is required since there is no easy way to find out the name you gave to your Phantom Omni.
+
+Some examples of configuration files can be found in the `share` directory.  Here is an example:
 ```json
 {
-    // serial port is optional, if already defined (e.g. command line
-    // argument), this will be ignored.  The Connect method will try
-    // to automatically find the serial port using a regular expression
-    "serial-port": "/dev/ttyUSB0",
-
-    // definition path is a list of directories used to find tool
-    // definition files (in order defined in this file).  By default,
-    // the search path include the current working directory as well
-    // as the source directory with suffix "share/roms" at the tail.
-    "definition-path": ["/a_directory", "/another_directory"],
-
-    // list of tools to be tracked
-    "tools": [
+    "devices":
+    [
         {
-            // active tool
-            "name": "Base",
-            "unique-id": "01-3288C807-8700223"
-        }
-	,
-        {
-            // passive tool, must be defined after Base since it uses Base as reference frame
-            "name": "Pointer",
-            "unique-id": "01-34801403-8700339",
-            "definition": "8700339.rom", // this is a passive tool, the definition has to be provided
-            "reference" : "Base"
+            "name": "left"
         }
     ]
 }
 ```
 
-The tool name will be used to create the cisstMultiTask required interface (see https://github.com/jhu-cisst/cisst/wiki/cisstMultiTask-concepts), Qt Widgets and ROS topics (see example below).
-
-When starting the example, the GUI will just show the controller view:
-![GUI controller view](doc/gui-on-start.png "GUI on start, controller view")
-
-The first step is to connect to the device.   If the device is found, the tool widgets will appear.  The number of tools and names used is based on the content of the configuration file.
-![GUI with tools](doc/gui-after-connect.png "GUI after connection, tools widgets should appear")
-
-Then you can start tracking:
-![GUI tracking](doc/gui-tracking.png "GUI tracking, when visible the timestamp should turn green")
-
-If you unplug/replug an active tool, you might have to hit the `(Re)initialize` button and then turn tracking back on.
-
-## Python
-
-Since `cisstMultiTask` has a nice Python interface it is possible to use the `sawNDITracker` from Python.  Make sure you compiled `cisst` with the CMake option `CISST_HAS_SWIG_PYTHON` and you've sourced `cisstvars.sh` so you can find the `cisstMultiTaskPython` module.
-
-```sh
-cisst-saw/sawNDITracker/examples$ ./mainPython.py --port /dev/ttyUSB0 --json ../share/ndi-active-tools.json
-```
-
 ## ROS
 
-Please read the section above for the configuration file description.  The ROS node is `ndi_tracker` and can be found in the package `ndi_tracker_ros`:
+Please read the section above for the configuration file description.  The ROS node is `sensable_phantom` and can be found in the package `sensable_phantom_ros`:
 ```sh
-roscd ndi_tracker_ros
-rosrun ndi_tracker_ros ndi_tracker -j ../share/ndi-active-tools.json 
+roscd sensable_phantom_config
+rosrun sensable_phantom_ros sensable_phantom -D -j sawSensablePhantomLeft.json 
 ```
 
-The ROS node has a few more command line options:
+The ROS node has one more command line option:
 ```sh
-/home/adeguet1/catkin_ws/devel_debug/lib/ndi_tracker_ros/ndi_tracker:
- -j <value>, --json-config <value> : json configuration file (optional)
- -s <value>, --serial-port <value> : serial port (e.g. /dev/ttyUSB0, COM...) (optional)
- -l, --log-serial : log all serial port read/writes in cisstLog.txt (optional)
- -n <value>, --ros-namespace <value> : ROS namespace to prefix all topics, must have start and end "/" (default /ndi/) (optional)
- -p <value>, --ros-period <value> : period in seconds to read all components and publish (default 0.02, 20 ms, 50Hz).  There is no point to have a period higher than the tracker's period (optional)
- -P <value>, --tf-ros-period <value> : period in seconds to read all components and broadcast tf2 (default 0.02, 20 ms, 50Hz).  There is no point to have a period higher than the tracker's period (optional)
+ -j <value>, --json-config <value> : json configuration file (required)
+ -p <value>, --ros-period <value> : period in seconds to read all tool positions (default 0.002, 2 ms, 500Hz).  There is no point to have a period higher than the device (optional)
+ -m, --component-manager : JSON files to configure component manager (optional)
+ -D, --dark-mode : replaces the default Qt palette with darker colors (optional)
 ```
 
 Once the node is started AND connected, the following ROS topics should appear:
 ```sh
-/ndi/Base/position_cartesian_current
-/ndi/Pointer/position_cartesian_current
-/ndi/connect
-/ndi/connected
-/ndi/fiducials
+/left/button1
+/left/button2
+/left/measured_cp
+/left/measured_cv
+/left/measured_js
+/left/operating_state
+/left/servo_cf
+/left/state_command
+/stats/events/period_statistics
+/stats/left/period_statistics
+/stats/publishers_left/period_statistics
+/stats/subscribers/period_statistics
 ```
-
-The topic names for the tools are based on the names in the configuration file or the unique ID if there is no configuration file specified.
-
-You can also visualize the tf2 output using:
-```sh
-rosrun tf2_tools view_frames.py
-evince frames.pdf 
-```
-
-In our example, the `Base` is defined with respect to the `Camera` and the `Pointer` is defined with respect to the `Base`:
-![tf2](doc/frames.png "tf2")
-
-# Notes
-
-## Units
-
-By default NDI API reports distances in millimeters.   The `cisst` libraries used to implicitly rely on millimeters and grams but can now be configured to report distances in (preferred) SI units (i.e., meter, kg, N).   This setting can be changed in CMake while configuring `cisst` by setting the variable `CISST_USE_SI`.   The default is `CISST_USE_SI` is `0` (false) except when compiling with ROS catkin build tools (the default with ROS for `CISST_USE_SI` is `1`).   In your code, you can include `cisstConfig.h` and use the preprocessor variable `CISST_USE_SI` to handle both cases.   When running your program, you can also look at the `cisstLog.txt` file, it will contain a line indicating if `CISST_USE_SI` is true or false.
