@@ -157,7 +157,7 @@ void mtsSensableHD::Run(void)
         // retrieve forces
         hdGetDoublev(HD_LAST_FORCE,
                      device->m_measured_cf.Force().Pointer());
-    
+
         // retrieve joint positions and efforts, write directly in state data
         hdGetDoublev(HD_CURRENT_JOINT_ANGLES,
                      device->m_measured_js.Position().Pointer());
@@ -508,6 +508,7 @@ void mtsSensableHD::Kill(void)
     hdUnschedule(m_driver->CallbackHandle);
 
     // Disable the devices
+#if 0
     const size_t nbDevices = m_devices.size();
     mtsSensableHDDevice * device;
     mtsSensableHDHandle * handle;
@@ -518,6 +519,7 @@ void mtsSensableHD::Kill(void)
             hdDisableDevice(handle->m_device_handle);
         }
     }
+#endif
 
     // Call base class Kill function
     mtsTaskFromCallback::Kill();
