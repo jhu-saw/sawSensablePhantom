@@ -12,19 +12,4 @@
             "configure-parameter": "igtl-default.json"
         }
     ]
-    ,
-    "connections":
-    [
-        {
-            "required": {
-                "component": "igtlBridge",
-                "interface": "Default PHANToM"
-            }
-            ,
-            "provided": {
-                "component": "SensableHD",
-                "interface": "Default PHANToM"
-            }
-        }
-    ]
 }
