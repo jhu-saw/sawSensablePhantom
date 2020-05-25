@@ -4,7 +4,7 @@
     [
         {
             "shared-library": "sawOpenIGTLink",
-            "class-name": "mtsOpenIGTLinkBridge",
+            "class-name": "mtsIGTLCRTKBridge",
             "constructor-arg": {
                 "Name": "igtlBridge",
                 "Period": 0.01
@@ -18,7 +18,7 @@
         {
             "required": {
                 "component": "igtlBridge",
-                "interface": "Default"
+                "interface": "Default PHANToM"
             }
             ,
             "provided": {
