@@ -119,5 +119,5 @@ One can also communicate with the Omni using OpenIGTLink as
 sawOpenIGTLink is compiled against OpenIGTLink version 3+ (see
 https://github.com/jhu-saw/sawOpenIGTLink).  Once sawOpenIGTLink is
 compiled, you will need two extra configuration files (examples can be found in `share` directory):
-* Component manager configuration file to load the dynamic library `sawOpenIGTLing` and create/configure the OpenIGTLink bridge.  To to so, the cisst component manager creates an instance of the class `mtsIGTLCRTKBridge`.  The component manager configuration file is passed to the main program using the option `-m`.
-* IGTL bridge configuration file.  This indicates which component and interface to bridge to IGTL.  The component name is set in the `main()` function and should be `SensableHD`.  The interface name is the Omni name you've set when configuring your Omni (default is `Default PHANToM`.
+* Component manager configuration file to load the dynamic library `sawOpenIGTLing` and create/configure the OpenIGTLink bridge.  The cisst component manager creates an instance of the class `mtsIGTLCRTKBridge`.  The component manager configuration file is passed to the main program using the option `-m`.
+* IGTL bridge configuration file.  This indicates which component and interface to bridge to IGTL.  The component name is set in the `main()` function and should be `SensableHD`.  The interface name is the Omni name you've set when configuring your Omni (default is `Default PHANToM`).
