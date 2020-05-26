@@ -5,8 +5,10 @@
     [
         {
             "component": "SensableHD",
-            "interface": "Default PHANToM",
-            "name": "Default"
+            "interface-provided": "Default PHANToM",
+            "namespace": "Default"
+            // , "bridge-only": ["measured_cp", "measured_cv"]
+            , "bridge-only": ["measured_cp"]
         }
     ]
 }
