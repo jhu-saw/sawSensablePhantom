@@ -5,10 +5,10 @@
     [
         {
             "component": "SensableHD",
-            "interface-provided": "Default PHANToM",
-            "namespace": "Default"
+            "interface-provided": "arm"
+            // , "namespace": "omni" // if the user prefers a different name
             // , "bridge-only": ["measured_cp", "measured_cv"]
-            , "bridge-only": ["measured_cp"]
+            // , "bridge-only": ["status", "error", "warning"]
         }
     ]
 }

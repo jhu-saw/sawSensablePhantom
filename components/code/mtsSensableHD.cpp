@@ -261,7 +261,7 @@ void mtsSensableHD::Configure(const std::string & filename)
         m_devices.resize(1);
         m_handles.resize(1);
         m_devices.at(0) = new mtsSensableHDDevice;
-        m_devices.at(0)->m_name = "Default";
+        m_devices.at(0)->m_name = "arm";
         SetupInterfaces();
         return;
     }
