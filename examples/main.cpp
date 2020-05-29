@@ -44,7 +44,7 @@ int main(int argc, char * argv[])
 
     options.AddOptionOneValue("j", "json-config",
                               "json configuration file",
-                              cmnCommandLineOptions::REQUIRED_OPTION, &jsonConfigFile);
+                              cmnCommandLineOptions::OPTIONAL_OPTION, &jsonConfigFile);
     options.AddOptionMultipleValues("m", "component-manager",
                                     "JSON files to configure component manager",
                                     cmnCommandLineOptions::OPTIONAL_OPTION, &managerConfig);

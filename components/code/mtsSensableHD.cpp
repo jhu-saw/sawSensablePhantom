@@ -125,6 +125,7 @@ public:
                                Frame4x4Type::ROWSTRIDE, Frame4x4Type::COLSTRIDE> Frame4x4RotationRef;
 
     std::string m_name;
+    bool m_use_default_handle = true;
 };
 
 
@@ -285,6 +286,7 @@ void mtsSensableHD::Configure(const std::string & filename)
         jsonValue = devices[index]["name"];
         if (!jsonValue.empty()) {
             m_devices.at(index)->m_name = jsonValue.asString();
+            m_devices.at(index)->m_use_default_handle = false;
         } else {
             CMN_LOG_CLASS_INIT_ERROR << "Configure: no \"name\" found for device " << index << std::endl;
             exit(EXIT_FAILURE);
@@ -451,7 +453,11 @@ void mtsSensableHD::Create(void * CMN_UNUSED(data))
         device = m_devices.at(index);
         handle = m_handles.at(index);
         CMN_ASSERT(device);
-        handle->m_device_handle = hdInitDevice(device->m_name.c_str());
+        if (device->m_use_default_handle) {
+            handle->m_device_handle = hdInitDevice(NULL);
+        } else {
+            handle->m_device_handle = hdInitDevice(device->m_name.c_str());
+        }
         if (HD_DEVICE_ERROR(error = hdGetError())) {
             device->m_interface->SendError(device->m_name + ": failed to initialize device \""
                                            + hdGetErrorString(error.errorCode) + "\"");

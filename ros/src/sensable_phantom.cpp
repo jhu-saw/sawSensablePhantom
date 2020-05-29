@@ -52,7 +52,7 @@ int main(int argc, char * argv[])
 
     options.AddOptionOneValue("j", "json-config",
                               "json configuration file",
-                              cmnCommandLineOptions::REQUIRED_OPTION, &jsonConfigFile);
+                              cmnCommandLineOptions::OPTIONAL_OPTION, &jsonConfigFile);
     options.AddOptionOneValue("p", "ros-period",
                               "period in seconds to read all tool positions (default 0.002, 2 ms, 500Hz).  There is no point to have a period higher than the device",
                               cmnCommandLineOptions::OPTIONAL_OPTION, &rosPeriod);
