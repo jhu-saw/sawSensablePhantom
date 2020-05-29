@@ -37,7 +37,7 @@ By default the drivers are configured so the OS sets the ownership of `/dev/fw1`
 
 ## Configuration
 
-It is important to first run the Sensable provided configuration tool to make sure your device is properly detected and to name it.   To do so, you will have to run the `PHANToMConfiguration` program with admin privileges:
+It is important to first run the Sensable provided configuration tool to make sure your device is properly detected and to name it (names are important if you have more than one Omni on the same computer).   To do so, you will have to run the `PHANToMConfiguration` program with admin privileges:
 ```sh
 sudo PHANToMConfiguration
 ```
@@ -56,17 +56,20 @@ For Linux users, we strongly recommend to compile with ROS and the python catkin
 The main example provided is `sawSensablePhantomQtExample`.  The command line options are:
 ```sh
 sawSensablePhantomQtExample:
- -j <value>, --json-config <value> : json configuration file (required)
+ -j <value>, --json-config <value> : json configuration file (optional)
  -m, --component-manager : JSON files to configure component manager (optional)
  -D, --dark-mode : replaces the default Qt palette with darker colors (optional)
 ```
 
-For example:
+To use the default Omni or only Omni on your computer:
+```sh
+sawSensablePhantomQtExample -D
+```
+
+If you want to use a specific Omni or define your own name for the device (e.g. Left vs Right):
 ```sh
 sawSensablePhantomQtExample -D -j sawSensablePhantomLeft.json
 ```
-
-The JSON configuration file is required since there is no easy way to find out the name you gave to your Phantom Omni.
 
 Some examples of configuration files can be found in the `share` directory.  Here is an example:
 ```json
