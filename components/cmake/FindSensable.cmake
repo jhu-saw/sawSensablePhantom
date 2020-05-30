@@ -43,35 +43,33 @@ if (WIN32)
     set (SENSABLE_INCLUDE_DIR
          ${SENSABLE_BASE_ENV}/include
          ${SENSABLE_BASE_ENV}/utilities/include)
-    find_library (SENSABLE_LIB_HD hd ${SENSABLE_BASE_ENV}/lib
-                                    ${SENSABLE_BASE_ENV}/lib/win32)
-    find_library (SENSABLE_LIB_HL hl ${SENSABLE_BASE_ENV}/lib
-                                     ${SENSABLE_BASE_ENV}/lib/win32)
-    find_library (SENSABLE_LIB_HDU hdu ${SENSABLE_BASE_ENV}/utilities/lib
-                                       ${SENSABLE_BASE_ENV}/utilities/lib/win32/Release)
-    # try to find hdud (OpenHaptics 2.x)
-    find_library (SENSABLE_LIB_HDUD hdud ${SENSABLE_BASE_ENV}/utilities/lib)
-    if (NOT ${SENSABLE_LIB_HDUD})
-      # try to find hdu in Debug directory (OpenHaptics 3.x)
-      find_library (SENSABLE_LIB_HDUD hdu ${SENSABLE_BASE_ENV}/utilities/lib/win32/Debug)
-    endif (NOT ${SENSABLE_LIB_HDUD})
-    find_library (SENSABLE_LIB_HLU hlu ${SENSABLE_BASE_ENV}/utilities/lib
-                                       ${SENSABLE_BASE_ENV}/utilities/lib/win32/Release)
-    # try to find hlud (OpenHaptics 2.x)
-    find_library (SENSABLE_LIB_HLUD hlud ${SENSABLE_BASE_ENV}/utilities/lib)
-    if (NOT ${SENSABLE_LIB_HLUD})
-      # try to find hlu in Debug directory (OpenHaptics 3.x)
-      find_library (SENSABLE_LIB_HLUD hlu ${SENSABLE_BASE_ENV}/utilities/lib/win32/Debug)
-    endif (NOT ${SENSABLE_LIB_HLUD})
+
+    if("${CMAKE_SIZEOF_VOID_P}" STREQUAL "8")
+      SET(LIBRARY_PREFIX "x64")
+    else()
+      SET(LIBRARY_PREFIX "Win32")
+    endif()
+
+    #set(SENSABLE_LIB_HD "SENSABLE_LIB_HD-NOTFOUND")
+    find_library (SENSABLE_LIB_HD hd PATHS ${SENSABLE_BASE_ENV}/lib/${LIBRARY_PREFIX}/Release)
+    find_library (SENSABLE_LIB_HL hl PATHS ${SENSABLE_BASE_ENV}/lib/${LIBRARY_PREFIX}/Release)
+    find_library (SENSABLE_LIB_HDD hd PATHS ${SENSABLE_BASE_ENV}/lib/${LIBRARY_PREFIX}/Debug)
+    find_library (SENSABLE_LIB_HLD hl PATHS ${SENSABLE_BASE_ENV}/lib/${LIBRARY_PREFIX}/Debug)
+
+    find_library (SENSABLE_LIB_HDU hdu PATHS ${SENSABLE_BASE_ENV}/utilities/lib/${LIBRARY_PREFIX}/Release)
+    find_library (SENSABLE_LIB_HLU hlu PATHS ${SENSABLE_BASE_ENV}/utilities/lib/${LIBRARY_PREFIX}/Release)
+    find_library (SENSABLE_LIB_HDUD hdu PATHS ${SENSABLE_BASE_ENV}/utilities/lib/${LIBRARY_PREFIX}/Debug)
+    find_library (SENSABLE_LIB_HLUD hlu PATHS ${SENSABLE_BASE_ENV}/utilities/lib/${LIBRARY_PREFIX}/Debug)
+
     set (SENSABLE_LIBRARIES_RELEASE
          ${SENSABLE_LIB_HD} ${SENSABLE_LIB_HDU}
          ${SENSABLE_LIB_HL} ${SENSABLE_LIB_HLU})
     set (SENSABLE_LIBRARIES_DEBUG
-         ${SENSABLE_LIB_HD} ${SENSABLE_LIB_HDUD}
-         ${SENSABLE_LIB_HL} ${SENSABLE_LIB_HLUD})
+         ${SENSABLE_LIB_HDD} ${SENSABLE_LIB_HDUD}
+         ${SENSABLE_LIB_HLD} ${SENSABLE_LIB_HLUD})
     set (SENSABLE_LIBRARIES
-         ${SENSABLE_LIB_HD}
-         ${SENSABLE_LIB_HL}
+         optimized ${SENSABLE_LIB_HD} debug ${SENSABLE_LIB_HDD}
+         optimized ${SENSABLE_LIB_HL} debug ${SENSABLE_LIB_HLD}
          optimized ${SENSABLE_LIB_HDU} debug ${SENSABLE_LIB_HDUD}
          optimized ${SENSABLE_LIB_HLU} debug ${SENSABLE_LIB_HLUD})
 
