@@ -317,12 +317,12 @@ void mtsSensableHD::SetupInterfaces(void)
         device->Frame4x4TranslationRef.SetRef(device->Frame4x4.Column(3), 0);
         device->Frame4x4RotationRef.SetRef(device->Frame4x4, 0, 0);
         device->m_measured_js.Name().SetSize(NB_JOINTS);
-        device->m_measured_js.Name().at(0) = "OuterYaw";
-        device->m_measured_js.Name().at(1) = "OuterPitch1";
-        device->m_measured_js.Name().at(2) = "OuterPitch2";
-        device->m_measured_js.Name().at(3) = "Yaw";
-        device->m_measured_js.Name().at(4) = "Pitch";
-        device->m_measured_js.Name().at(5) = "Roll";
+        device->m_measured_js.Name().at(0) = "waist";
+        device->m_measured_js.Name().at(1) = "shoulder";
+        device->m_measured_js.Name().at(2) = "elbow";
+        device->m_measured_js.Name().at(3) = "yaw";
+        device->m_measured_js.Name().at(4) = "pitch";
+        device->m_measured_js.Name().at(5) = "roll";
         device->m_measured_js.Position().SetSize(NB_JOINTS);
         device->GimbalPositionJointRef.SetRef(device->m_measured_js.Position(), 3, 3);
         device->m_measured_js.Effort().SetSize(NB_JOINTS);
