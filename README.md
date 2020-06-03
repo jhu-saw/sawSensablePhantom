@@ -85,7 +85,12 @@ Some examples of configuration files can be found in the `share` directory.  Her
 
 ## ROS
 
-Please read the section above for the configuration file description.  The ROS node is `sensable_phantom` and can be found in the package `sensable_phantom_ros`:
+The ROS node is `sensable_phantom` and can be found in the package `sensable_phantom_ros`.  If you only have one Omni and don't need a configuration file:
+```
+rosrun sensable_phantom_ros sensable_phantom
+```
+
+If you have more than one Omni, please read the section above for the configuration file description.
 ```sh
 roscd sensable_phantom_config
 rosrun sensable_phantom_ros sensable_phantom -D -j sawSensablePhantomLeft.json 
@@ -114,6 +119,13 @@ Once the node is started AND connected, the following ROS topics should appear:
 /stats/publishers_left/period_statistics
 /stats/subscribers/period_statistics
 ```
+
+After you've started the `sensable_phantom` node, you can also visualize the Omni in RViz using:
+```sh
+roslaunch sensable_phantom_ros rviz.launch
+```
+
+Note: urdf and models provided in this repository are from https://github.com/fsuarez6/phantom_omni
 
 ## OpenIGTLink (aka `igtl`)
 
