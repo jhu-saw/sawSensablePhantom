@@ -29,6 +29,7 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstParameterTypes/prmForwardDeclarationsQt.h>
 #include <cisstParameterTypes/prmPositionCartesianGet.h>
 #include <cisstParameterTypes/prmForceCartesianGet.h>
+#include <cisstParameterTypes/prmConfigurationJoint.h>
 #include <cisstParameterTypes/prmStateJoint.h>
 
 #include <QWidget>
@@ -65,6 +66,7 @@ class CISST_EXPORT mtsSensableHDQtWidget : public QWidget, public mtsComponent
     mtsInterfaceRequired * m_device_interface;
 
     struct {
+        mtsFunctionRead configuration_js;
         mtsFunctionRead measured_cp;
         mtsFunctionRead measured_cf;
         mtsFunctionRead measured_js;
@@ -76,6 +78,7 @@ class CISST_EXPORT mtsSensableHDQtWidget : public QWidget, public mtsComponent
  private:
     prmPositionCartesianGet m_measured_cp;
     prmForceCartesianGet m_measured_cf;
+    prmConfigurationJoint m_configuration_js;
     prmStateJoint m_measured_js;
 
     prmPositionCartesianGetQtWidget * QPCGWidget;

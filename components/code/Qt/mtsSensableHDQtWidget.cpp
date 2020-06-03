@@ -55,6 +55,7 @@ mtsSensableHDQtWidget::mtsSensableHDQtWidget(const std::string & componentName, 
     if (m_device_interface) {
         QMMessage->SetInterfaceRequired(m_device_interface);
         QPOState->SetInterfaceRequired(m_device_interface);
+        m_device_interface->AddFunction("configuration_js", Device.configuration_js);
         m_device_interface->AddFunction("measured_cp", Device.measured_cp);
         m_device_interface->AddFunction("measured_cf", Device.measured_cf);
         m_device_interface->AddFunction("measured_js", Device.measured_js);
@@ -131,6 +132,7 @@ void mtsSensableHDQtWidget::setupUi(void)
 
     // 3D position
     QPCGWidget = new prmPositionCartesianGetQtWidget();
+    QPCGWidget->SetPrismaticRevoluteFactors(1.0 / cmn_mm, cmn180_PI);
     controlLayout->addWidget(QPCGWidget);
 
     // wrench
@@ -139,6 +141,7 @@ void mtsSensableHDQtWidget::setupUi(void)
 
     // joint state
     QSJWidget = new prmStateJointQtWidget();
+    QSJWidget->SetPrismaticRevoluteFactors(1.0 / cmn_mm, cmn180_PI);
     controlLayout->addWidget(QSJWidget);
 
     // buttons widget
@@ -194,6 +197,11 @@ void mtsSensableHDQtWidget::timerEvent(QTimerEvent * CMN_UNUSED(event))
 
     executionResult = Device.measured_js(m_measured_js);
     if (executionResult) {
+        if ((m_configuration_js.Name().size() != m_measured_js.Name().size())
+            && (Device.configuration_js.IsValid())) {
+            Device.configuration_js(m_configuration_js);
+            QSJWidget->SetConfiguration(m_configuration_js);
+        }
         QSJWidget->SetValue(m_measured_js);
     }
 
