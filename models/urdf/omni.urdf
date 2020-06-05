@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <robot name="phantom_omni" xmlns:xacro="http://www.ros.org/wiki/xacro">
-  
+
   <!-- Materials -->
   <material name="metal_seamed">
     <color rgba="0.4627450980392157 0.4666666666666667 0.4509803921568628 1.0" />
@@ -11,7 +11,7 @@
   <material name="white">
     <color rgba="1.0 1.0 1.0 1.0" />
   </material>
-  
+
   <!-- Links -->
   <link name="base" >
     <visual>
@@ -76,7 +76,7 @@
       <material name="blue" />
     </visual>
   </link>
-  
+
   <!-- joints -->
   <joint name="waist" type="revolute" >
     <parent link="base" />
@@ -98,7 +98,7 @@
     <origin xyz="0.0075 .134 0" rpy="-1.5 0 0" />
     <axis xyz="1 0 0" />
     <!-- upper="1.25" -->
-    <limit lower="-0.81" upper="1.25" velocity="100" effort="5" /> 
+    <limit lower="-0.81" upper="1.25" velocity="100" effort="5" />
   </joint>
   <joint name="yaw" type="revolute" >
     <parent link="lower_arm" />

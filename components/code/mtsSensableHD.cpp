@@ -26,6 +26,7 @@ http://www.cisst.org/cisst/license.txt.
 #include <sawSensablePhantom/mtsSensableHD.h>
 
 #include <cisstCommon/cmnUnits.h>
+#include <cisstOSAbstraction/osaSleep.h>
 #include <cisstMultiTask/mtsInterfaceProvided.h>
 
 #include <cisstParameterTypes/prmOperatingState.h>
@@ -145,8 +146,21 @@ void mtsSensableHD::Run(void)
         // begin haptics frame
         hHD = handle->m_device_handle;
         hdMakeCurrentDevice(hHD);
-        hdBeginFrame(hHD);
 
+#if 0
+        bool inInkwell = false;
+        HDboolean inkwellSwitch;
+        hdGetBooleanv(HD_CURRENT_INKWELL_SWITCH, &inkwellSwitch);
+        inInkwell = !inkwellSwitch;
+        HDErrorInfo error;
+        if (HD_DEVICE_ERROR(error = hdGetError())) {
+            CMN_LOG_RUN_ERROR << "mtsSensableHDCallback: device error detected \""
+                              << hdGetErrorString(error.errorCode) << "\"" << std::endl;
+        }
+        std::cerr << inInkwell;
+#endif
+        
+        hdBeginFrame(hHD);
         // get the current cartesian position of the device
         hdGetDoublev(HD_CURRENT_TRANSFORM, device->Frame4x4.Pointer());
         // retrieve cartesian velocities, write directly in state data
@@ -471,6 +485,44 @@ void mtsSensableHD::Create(void * CMN_UNUSED(data))
                                         + hdGetString(HD_DEVICE_MODEL_TYPE) + "\"");
         device->m_interface->SendStatus(device->m_name + ": found serial number \""
                                         + hdGetString(HD_DEVICE_SERIAL_NUMBER) + "\"");
+
+#if 0
+        int calibrationStyle;
+        int supportedCalibrationStyles;
+        HDErrorInfo error;
+        
+        hdGetIntegerv(HD_CALIBRATION_STYLE, &supportedCalibrationStyles);
+        if (supportedCalibrationStyles & HD_CALIBRATION_ENCODER_RESET) {
+            calibrationStyle = HD_CALIBRATION_ENCODER_RESET;
+            std::cerr << "HD_CALIBRATION_ENCODER_RESET..." << std::endl;
+        }
+        if (supportedCalibrationStyles & HD_CALIBRATION_INKWELL) {
+            calibrationStyle = HD_CALIBRATION_INKWELL;
+            std::cerr << "HD_CALIBRATION_INKWELL..." << std::endl;
+        }
+        if (supportedCalibrationStyles & HD_CALIBRATION_AUTO) {
+            calibrationStyle = HD_CALIBRATION_AUTO;
+            std::cerr << "HD_CALIBRATION_AUTO..." << std::endl;
+        }
+        
+        do {
+            hdUpdateCalibration(calibrationStyle);
+            std::cerr << "Phantom Omni needs to be calibrated, please put the stylus in the well." << std::endl;
+            if (HD_DEVICE_ERROR(error = hdGetError())) {
+                std::cerr << "Calibration failed: " << error << std::endl;
+            }
+            HDboolean inInkwell;
+            hdGetBooleanv(HD_CURRENT_INKWELL_SWITCH, &inInkwell);
+            if (inInkwell) {
+                std::cerr << "+";
+            } else {
+                std::cerr << "-";
+            }
+            osaSleep(1.0 * cmn_s);
+        }   while (hdCheckCalibration() != HD_CALIBRATION_OK);
+        std::cerr << "Phantom Omni calibration complete." << std::endl;
+#endif
+        
         hdEnable(HD_FORCE_OUTPUT);
     }
 
@@ -515,7 +567,7 @@ void mtsSensableHD::Kill(void)
     hdUnschedule(m_driver->CallbackHandle);
 
     // Disable the devices
-#if 0
+#if 0 // this seems to crash with FireWire based models
     const size_t nbDevices = m_devices.size();
     mtsSensableHDDevice * device;
     mtsSensableHDHandle * handle;
