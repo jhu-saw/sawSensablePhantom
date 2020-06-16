@@ -1,0 +1,20 @@
+- git:
+    local-name: cisstNetlib
+    uri: https://github.com/jhu-cisst/cisstNetlib
+    version: master
+- git:
+    local-name: cisst
+    uri: https://github.com/jhu-cisst/cisst
+    version: feature-crtk
+- git:
+    local-name: crtk-msgs
+    uri: https://github.com/collaborative-robotics/crtk-msgs
+    version: master
+- git:
+    local-name: cisst-ros
+    uri: https://github.com/jhu-cisst/cisst-ros
+    version: feature-crtk
+- git:
+    local-name: sawSensablePhantom
+    uri: https://github.com/jhu-saw/sawSensablePhantom
+    version: feature-crtk

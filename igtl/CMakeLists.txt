@@ -59,8 +59,8 @@ if (cisst_FOUND_AS_REQUIRED)
     # link against cisst libraries (and dependencies)
     cisst_target_link_libraries (sawSensablePhantomQtIGTL ${REQUIRED_CISST_LIBRARIES})
 
-  else (sawSensablePhantom_FOUND AND CISST_HAS_QT)
+  else ()
     message ("Information: code in ${CMAKE_CURRENT_SOURCE_DIR} will not be compiled, it requires sawSensablePhantom and cisstQt")
-  endif (sawSensablePhantom_FOUND AND CISST_HAS_QT)
+  endif ()
 
 endif (cisst_FOUND_AS_REQUIRED)
