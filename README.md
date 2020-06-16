@@ -51,7 +51,15 @@ This code is part of the cisst-SAW libraries and components.  Once the drivers a
 
 For Linux users, we strongly recommend to compile with ROS and the python catkin build tools (i.e. `catkin build`, NOT `catkin_make`).  Detailled instructions can be found on https://github.com/jhu-cisst/cisst/wiki/Compiling-cisst-and-SAW-with-CMake#13-building-using-catkin-build-tools-for-ros.
 
-Short version to compile using `catkin` and `wstool` (but please also read the link above):
+Short version for Ubuntu (18.04) ROS (melodic) to compile using `catkin` and `wstool` (but please alssource /opt/ros/melodic/setup.bash # or use whatever version of ROS is installed!
+mkdir ~/catkin_ws # create the catkin workspace
+cd ~/catkin_ws # go in the workspace
+wstool init src # we're going to use wstool to pull all the code from github
+catkin init
+cd src # go in source directory to pull code
+wstool merge https://github.com/jhu-saw/sawSensablePhantom/raw/feature-crtk/ros/sensable_phantom.rosinstall
+wstool up # now,wstool knows which repositories to pull, let's do it
+catkin build # ... and finally compile everythingo read the link above):
 ```sh
 sudo apt install libxml2-dev libraw1394-dev libncurses5-dev qtcreator swig sox espeak cmake-curses-gui cmake-qt-gui git subversion gfortran libcppunit-dev libqt5xmlpatterns5-dev # most system dependencies we need
 sudo apt install python-wstool python-catkin-tools # catkin and wstool for ROS build
@@ -62,7 +70,15 @@ wstool init src # we're going to use wstool to pull all the code from github
 catkin init
 cd src # go in source directory to pull code
 wstool merge https://github.com/jhu-saw/sawSensablePhantom/raw/feature-crtk/ros/sensable_phantom.rosinstall
+wstool up # now,wstool knows which repositories to pull, let's do itsource /opt/ros/melodic/setup.bash # or use whatever version of ROS is installed!
+mkdir ~/catkin_ws # create the catkin workspace
+cd ~/catkin_ws # go in the workspace
+wstool init src # we're going to use wstool to pull all the code from github
+catkin init
+cd src # go in source directory to pull code
+wstool merge https://github.com/jhu-saw/sawSensablePhantom/raw/feature-crtk/ros/sensable_phantom.rosinstall
 wstool up # now,wstool knows which repositories to pull, let's do it
+catkin build # ... and finally compile everything
 catkin build # ... and finally compile everything
 ```
 
@@ -142,11 +158,27 @@ roslaunch sensable_phantom_ros rviz.launch
 
 Note: urdf and models provided in this repository are from https://github.com/fsuarez6/phantom_omni
 
-## OpenIGTLink (aka `igtl`)
+## OpenIGTLink (aka `igtl`)source /opt/ros/melodic/setup.bash # or use whatever version of ROS is installed!
+mkdir ~/catkin_ws # create the catkin workspace
+cd ~/catkin_ws # go in the workspace
+wstool init src # we're going to use wstool to pull all the code from github
+catkin init
+cd src # go in source directory to pull code
+wstool merge https://github.com/jhu-saw/sawSensablePhantom/raw/feature-crtk/ros/sensable_phantom.rosinstall
+wstool up # now,wstool knows which repositories to pull, let's do it
+catkin build # ... and finally compile everything
 
 One can also communicate with the Omni using OpenIGTLink as
 "middleware" instead of ROS.  To do so, you first need to make sure
-sawOpenIGTLink is compiled against OpenIGTLink version 3+ (see
+sawOpenIGTLink is compiled against OpenIGTLink version 3+ (seesource /opt/ros/melodic/setup.bash # or use whatever version of ROS is installed!
+mkdir ~/catkin_ws # create the catkin workspace
+cd ~/catkin_ws # go in the workspace
+wstool init src # we're going to use wstool to pull all the code from github
+catkin init
+cd src # go in source directory to pull code
+wstool merge https://github.com/jhu-saw/sawSensablePhantom/raw/feature-crtk/ros/sensable_phantom.rosinstall
+wstool up # now,wstool knows which repositories to pull, let's do it
+catkin build # ... and finally compile everything
 https://github.com/jhu-saw/sawOpenIGTLink).  Once sawOpenIGTLink is
 compiled, you will need two extra configuration files (examples can be found in `share` directory):
 * Component manager configuration file to load the dynamic library `sawOpenIGTLing` and create/configure the OpenIGTLink bridge.  The cisst component manager creates an instance of the class `mtsIGTLCRTKBridge`.  The component manager configuration file is passed to the main program using the option `-m`.
