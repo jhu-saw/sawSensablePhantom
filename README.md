@@ -70,15 +70,7 @@ wstool init src # we're going to use wstool to pull all the code from github
 catkin init
 cd src # go in source directory to pull code
 wstool merge https://github.com/jhu-saw/sawSensablePhantom/raw/feature-crtk/ros/sensable_phantom.rosinstall
-wstool up # now,wstool knows which repositories to pull, let's do itsource /opt/ros/melodic/setup.bash # or use whatever version of ROS is installed!
-mkdir ~/catkin_ws # create the catkin workspace
-cd ~/catkin_ws # go in the workspace
-wstool init src # we're going to use wstool to pull all the code from github
-catkin init
-cd src # go in source directory to pull code
-wstool merge https://github.com/jhu-saw/sawSensablePhantom/raw/feature-crtk/ros/sensable_phantom.rosinstall
-wstool up # now,wstool knows which repositories to pull, let's do it
-catkin build # ... and finally compile everything
+wstool up # now wstool knows which repositories to pull, let's get the code
 catkin build # ... and finally compile everything
 ```
 
