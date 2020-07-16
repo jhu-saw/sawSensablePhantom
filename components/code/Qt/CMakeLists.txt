@@ -47,6 +47,11 @@ if (cisst_FOUND_AS_REQUIRED)
   # make sure the new library is known by the parent folder to add to the config file
   set (sawSensablePhantomQt_LIBRARIES sawSensablePhantomQt PARENT_SCOPE)
 
+  install (TARGETS sawSensablePhantomQt
+           RUNTIME DESTINATION bin
+           LIBRARY DESTINATION lib
+           ARCHIVE DESTINATION lib)
+
 else (cisst_FOUND_AS_REQUIRED)
   message ("Information: code will not be compiled, it requires ${REQUIRED_CISST_LIBRARIES}")
 endif (cisst_FOUND_AS_REQUIRED)

@@ -19,7 +19,8 @@ set (REQUIRED_CISST_LIBRARIES cisstCommon
                               cisstOSAbstraction
                               cisstMultiTask
                               cisstMultiTaskQt
-                              cisstParameterTypes)
+                              cisstParameterTypes
+                              cisstParameterTypesQt)
 
 # find cisst and make sure the required libraries have been compiled
 find_package (cisst 1.0.10 REQUIRED ${REQUIRED_CISST_LIBRARIES})
