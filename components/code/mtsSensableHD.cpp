@@ -64,8 +64,12 @@ public:
             if (m_operating_state.ValidCommand(prmOperatingState::CommandTypeFromString(command),
                                                newOperatingState, humanReadableMessage)) {
                 if (command == "enable") {
+                    m_cp_mode = true;
+                    m_cf_mode = true;
                     m_operating_state.State() = prmOperatingState::ENABLED;
                 } else if (command == "disable") {
+                    m_cp_mode = false;
+                    m_cf_mode = false;
                     m_operating_state.State() = prmOperatingState::DISABLED;
                 } else {
                     m_interface->SendStatus(this->m_name + ": state command \""
@@ -87,7 +91,17 @@ public:
 
     inline void servo_cf(const prmForceCartesianSet & wrench) {
         if (m_operating_state.State() == prmOperatingState::ENABLED) {
+            m_cp_mode = false;
+            m_cf_mode = true;
             m_servo_cf = wrench;
+        }
+    }
+
+    inline void servo_cp(const prmPositionCartesianSet & position) {
+        if (m_operating_state.State() == prmOperatingState::ENABLED) {
+            m_cp_mode = true;
+            m_cf_mode = false;
+            m_servo_cp = position;
         }
     }
 
@@ -115,7 +129,9 @@ public:
     // mtsFunction called to broadcast the event
     mtsFunctionWrite m_button1_event, m_button2_event, m_state_event;
 
+    bool m_cp_mode, m_cf_mode;
     prmForceCartesianSet m_servo_cf;
+    prmPositionCartesianSet m_servo_cp;
 
     // local buffer used to store the position as provided
     // by Sensable
@@ -159,7 +175,7 @@ void mtsSensableHD::Run(void)
         }
         std::cerr << inInkwell;
 #endif
-        
+
         hdBeginFrame(hHD);
         // get the current cartesian position of the device
         hdGetDoublev(HD_CURRENT_TRANSFORM, device->Frame4x4.Pointer());
@@ -186,8 +202,18 @@ void mtsSensableHD::Run(void)
         // retrieve the current button(s).
         hdGetIntegerv(HD_CURRENT_BUTTONS, &current_buttons);
 
-        // apply forces
-        hdSetDoublev(HD_CURRENT_FORCE, device->m_servo_cf.Force().Pointer());
+        // apply forces if needed
+        if (device->m_cf_mode) {
+            hdSetDoublev(HD_CURRENT_FORCE, device->m_servo_cf.Force().Pointer());
+        } else if (device->m_cp_mode) {
+            // very simple PID on position
+            vct3 positionError;
+            vct3 measured_cp = device->Frame4x4TranslationRef;
+            measured_cp.Multiply(cmn_mm);
+            positionError.DifferenceOf(measured_cp, device->m_servo_cp.Goal().Translation());
+            vct3 force = -5000.0 * positionError;
+            hdSetDoublev(HD_CURRENT_FORCE, force.Pointer());
+        }
 
         // end haptics frame
         hdEndFrame(hHD);
@@ -327,6 +353,8 @@ void mtsSensableHD::SetupInterfaces(void)
         m_handles.at(index) = new mtsSensableHDHandle;
 
         device->m_operating_state.State() = prmOperatingState::DISABLED;
+        device->m_cp_mode = false;
+        device->m_cf_mode = false;
 
         device->Frame4x4TranslationRef.SetRef(device->Frame4x4.Column(3), 0);
         device->Frame4x4RotationRef.SetRef(device->Frame4x4, 0, 0);
@@ -387,6 +415,8 @@ void mtsSensableHD::SetupInterfaces(void)
         // commands
         provided->AddCommandWrite(&mtsSensableHDDevice::servo_cf,
                                   device, "servo_cf");
+        provided->AddCommandWrite(&mtsSensableHDDevice::servo_cp,
+                                  device, "servo_cp");
 
         // add a method to read the current state index
         provided->AddCommandRead(&mtsStateTable::GetIndexReader, &StateTable,
@@ -490,7 +520,7 @@ void mtsSensableHD::Create(void * CMN_UNUSED(data))
         int calibrationStyle;
         int supportedCalibrationStyles;
         HDErrorInfo error;
-        
+
         hdGetIntegerv(HD_CALIBRATION_STYLE, &supportedCalibrationStyles);
         if (supportedCalibrationStyles & HD_CALIBRATION_ENCODER_RESET) {
             calibrationStyle = HD_CALIBRATION_ENCODER_RESET;
@@ -504,7 +534,7 @@ void mtsSensableHD::Create(void * CMN_UNUSED(data))
             calibrationStyle = HD_CALIBRATION_AUTO;
             std::cerr << "HD_CALIBRATION_AUTO..." << std::endl;
         }
-        
+
         do {
             hdUpdateCalibration(calibrationStyle);
             std::cerr << "Phantom Omni needs to be calibrated, please put the stylus in the well." << std::endl;
@@ -522,7 +552,7 @@ void mtsSensableHD::Create(void * CMN_UNUSED(data))
         }   while (hdCheckCalibration() != HD_CALIBRATION_OK);
         std::cerr << "Phantom Omni calibration complete." << std::endl;
 #endif
-        
+
         hdEnable(HD_FORCE_OUTPUT);
     }
 
