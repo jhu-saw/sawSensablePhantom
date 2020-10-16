@@ -211,7 +211,12 @@ void mtsSensableHD::Run(void)
             vct3 measured_cp = device->Frame4x4TranslationRef;
             measured_cp.Multiply(cmn_mm);
             positionError.DifferenceOf(measured_cp, device->m_servo_cp.Goal().Translation());
-            vct3 force = -5000.0 * positionError;
+            vct3 force = -100.0 * positionError;
+            double forceNorm = force.Norm();
+            const double maxForce = 1.5;
+            if (forceNorm > maxForce) {
+                force.Multiply(maxForce / forceNorm);
+            }
             hdSetDoublev(HD_CURRENT_FORCE, force.Pointer());
         }
 
@@ -352,7 +357,10 @@ void mtsSensableHD::SetupInterfaces(void)
         CMN_ASSERT(device);
         m_handles.at(index) = new mtsSensableHDHandle;
 
-        device->m_operating_state.State() = prmOperatingState::DISABLED;
+        device->m_operating_state.State() = prmOperatingState::ENABLED;
+        // for now, assume this is homed, until we can figure out issue with inkwell
+        device->m_operating_state.IsHomed() = true;
+        device->m_operating_state.Valid() = true;
         device->m_cp_mode = false;
         device->m_cf_mode = false;
 
@@ -587,6 +595,7 @@ void mtsSensableHD::Start(void)
     for (size_t index = 0; index != nbDevices; index++) {
         device = m_devices.at(index);
         device->m_interface->SendStatus(device->m_name + ": scheduler started");
+        device->m_operating_state_event(device->m_operating_state);
     }
 }
 
