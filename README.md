@@ -142,20 +142,11 @@ roslaunch sensable_phantom_ros rviz.launch
 
 Note: urdf and models provided in this repository are from https://github.com/fsuarez6/phantom_omni
 
-## OpenIGTLink (aka `igtl`)wstool merge https://github.com/jhu-saw/sawSensablePhantom/raw/feature-crtk/ros/sensable_phantom.rosinstall
+## OpenIGTLink (aka `igtl`)
 
 One can also communicate with the Omni using OpenIGTLink as
 "middleware" instead of ROS.  To do so, you first need to make sure
-sawOpenIGTLink is compiled against OpenIGTLink version 3+ (seesource /opt/ros/melodic/setup.bash # or use whatever version of ROS is installed!
-mkdir ~/catkin_ws # create the catkin workspace
-cd ~/catkin_ws # go in the workspace
-wstool init src # we're going to use wstool to pull all the code from github
-catkin init
-cd src # go in source directory to pull code
-wstool merge https://github.com/jhu-saw/sawSensablePhantom/raw/feature-crtk/ros/sensable_phantom.rosinstall
-wstool up # now,wstool knows which repositories to pull, let's do it
-catkin build # ... and finally compile everything
-https://github.com/jhu-saw/sawOpenIGTLink).  Once sawOpenIGTLink is
+sawOpenIGTLink is compiled against OpenIGTLink version 3+ (see https://github.com/jhu-saw/sawOpenIGTLink).  Once sawOpenIGTLink is
 compiled, you will need two extra configuration files (examples can be found in `share` directory):
-* Component manager configuration file to load the dynamic library `sawOpenIGTLing` and create/configure the OpenIGTLink bridge.  The cisst component manager creates an instance of the class `mtsIGTLCRTKBridge`.  The component manager configuration file is passed to the main program using the option `-m`.
+* Component manager configuration file to load the dynamic library `sawOpenIGTLink` and create/configure the OpenIGTLink bridge.  The cisst component manager creates an instance of the class `mtsIGTLCRTKBridge`.  The component manager configuration file is passed to the main program using the option `-m`.
 * IGTL bridge configuration file.  This indicates which component and interface to bridge to IGTL.  The component name is set in the `main()` function and should be `SensableHD`.  The interface name is the Omni name you've set when configuring your Omni (default is `Default PHANToM`).
