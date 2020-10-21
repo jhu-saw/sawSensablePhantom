@@ -61,7 +61,7 @@ cd ~/catkin_ws # go in the workspace
 wstool init src # we're going to use wstool to pull all the code from github
 catkin init
 cd src # go in source directory to pull code
-wstool merge https://github.com/jhu-saw/sawSensablePhantom/raw/feature-crtk/ros/sensable_phantom.rosinstall
+wstool merge https://github.com/jhu-saw/sawSensablePhantom/raw/devel/ros/sensable_phantom.rosinstall
 wstool up # now wstool knows which repositories to pull, let's get the code
 catkin build # ... and finally compile everything
 ```
@@ -142,7 +142,7 @@ roslaunch sensable_phantom_ros rviz.launch
 
 Note: urdf and models provided in this repository are from https://github.com/fsuarez6/phantom_omni
 
-## OpenIGTLink (aka `igtl`)
+## OpenIGTLink (aka `igtl`)wstool merge https://github.com/jhu-saw/sawSensablePhantom/raw/feature-crtk/ros/sensable_phantom.rosinstall
 
 One can also communicate with the Omni using OpenIGTLink as
 "middleware" instead of ROS.  To do so, you first need to make sure
