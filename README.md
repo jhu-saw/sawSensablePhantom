@@ -148,6 +148,23 @@ Note: urdf and models provided in this repository are from https://github.com/fs
 One can also communicate with the Omni using OpenIGTLink as
 "middleware" instead of ROS.  To do so, you first need to make sure
 sawOpenIGTLink is compiled against OpenIGTLink version 3+ (see https://github.com/jhu-saw/sawOpenIGTLink).  Once sawOpenIGTLink is
-compiled, you will need two extra configuration files (examples can be found in `share` directory):
+compiled, you will have two solutions.  You can either use the executable `sawSensablePhantomQtIGTL` which is linked against the *sawOpenIGTLink* library or use dynamic loading.
+
+### Dynamic loading
+
+you will need two extra configuration files (examples can be found in `share` directory):
 * Component manager configuration file to load the dynamic library `sawOpenIGTLink` and create/configure the OpenIGTLink bridge.  The cisst component manager creates an instance of the class `mtsIGTLCRTKBridge`.  The component manager configuration file is passed to the main program using the option `-m`.
 * IGTL bridge configuration file.  This indicates which component and interface to bridge to IGTL.  The component name is set in the `main()` function and should be `SensableHD`.  The interface name is the Omni name you've set when configuring your Omni (default is `Default PHANToM`).
+
+### Testing with *pyigtl*
+
+The first step is to install *pyigtl*.  See instructions on [*pyigtl* github page](https://github.com/lassoan/pyigtl).  You might have to use `pip3` instead of `pip`.  Then, start the `sawSensablePhantomQtIGTL` program.  In a different terminal, you can start `python` (or even better `ipython` or `ipython3`).  In Python:
+```python
+import pyigtl
+client = pyigtl.OpenIGTLinkClient("127.0.0.1", 18944)
+message = client.wait_for_message("arm/measured_cp") # get the current arm cartesian position
+goal = message.matrix # copy the matrix part of the received message
+transform_message = pyigtl.TransformMessage(goal, device_name="arm/servo_cp") # prepare a new message, to "servo" in cartesian position
+client.send_message(transform_message) # send the message.  At that point, the Omni will try to stay in place
+```
+
