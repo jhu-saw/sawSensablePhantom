@@ -129,6 +129,7 @@ Once the node is started AND connected, the following ROS topics should appear:
 /left/measured_js
 /left/operating_state
 /left/servo_cf
+/left/servo_cp
 /left/state_command
 /stats/events/period_statistics
 /stats/left/period_statistics
@@ -168,3 +169,4 @@ transform_message = pyigtl.TransformMessage(goal, device_name="arm/servo_cp") # 
 client.send_message(transform_message) # send the message.  At that point, the Omni will try to stay in place
 ```
 
+To disable position control, send a command to `servo_cf` with a null wrench (i.e. zero forces).
