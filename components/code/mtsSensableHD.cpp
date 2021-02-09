@@ -5,7 +5,7 @@
   Author(s): Anton Deguet
   Created on: 2008-04-04
 
-  (C) Copyright 2008-2020 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2008-2021 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -53,7 +53,58 @@ struct mtsSensableHDHandle {
 // internal data using Sensable data types
 class mtsSensableHDDevice {
 
+private:
+    inline mtsSensableHDDevice(void);
+
 public:
+
+    enum {NB_JOINTS = 6};
+
+    inline mtsSensableHDDevice(const std::string & name) {
+        m_name = name;
+
+        // some default values
+        m_max_force = 2.0;
+        m_servo_cf_viscosity = 0.0;
+        m_servo_cp_p_gain = 100.0;
+        m_servo_cp_d_gain = 3.0;
+        m_operating_state.State() = prmOperatingState::ENABLED;
+
+        // for now, assume this is homed, until we can figure out issue with inkwell
+        m_operating_state.IsHomed() = true;
+        m_operating_state.Valid() = true;
+        m_cp_mode = false;
+        m_cf_mode = false;
+
+        Frame4x4TranslationRef.SetRef(Frame4x4.Column(3), 0);
+        Frame4x4RotationRef.SetRef(Frame4x4, 0, 0);
+        m_measured_js.Name().SetSize(NB_JOINTS);
+        m_measured_js.Name().at(0) = "waist";
+        m_measured_js.Name().at(1) = "shoulder";
+        m_measured_js.Name().at(2) = "elbow";
+        m_measured_js.Name().at(3) = "yaw";
+        m_measured_js.Name().at(4) = "pitch";
+        m_measured_js.Name().at(5) = "roll";
+        m_measured_js.Position().SetSize(NB_JOINTS);
+        GimbalPositionJointRef.SetRef(m_measured_js.Position(), 3, 3);
+        m_measured_js.Effort().SetSize(NB_JOINTS);
+        GimbalEffortJointRef.SetRef(m_measured_js.Effort(), 3, 3);
+
+        m_configuration_js.Name() = m_measured_js.Name();
+        m_configuration_js.Type().SetSize(NB_JOINTS);
+        m_configuration_js.Type().SetAll(PRM_JOINT_REVOLUTE);
+        m_configuration_js.Valid() = true;
+
+        m_measured_cp.SetReferenceFrame(m_name + "_base");
+        m_measured_cp.SetMovingFrame(m_name);
+        // set to zero
+        m_measured_js.Position().SetAll(0.0);
+        m_measured_js.Effort().SetAll(0.0);
+        m_measured_cv.VelocityLinear().SetAll(0.0);
+        m_measured_cv.VelocityAngular().SetAll(0.0);
+        m_measured_cf.Force().SetAll(0.0);
+    }
+
     prmOperatingState m_operating_state;
     mtsFunctionWrite m_operating_state_event;
 
@@ -132,6 +183,7 @@ public:
     bool m_cp_mode, m_cf_mode;
     prmForceCartesianSet m_servo_cf;
     prmPositionCartesianSet m_servo_cp;
+    double m_max_force, m_servo_cp_p_gain, m_servo_cp_d_gain, m_servo_cf_viscosity;
 
     // local buffer used to store the position as provided
     // by Sensable
@@ -204,18 +256,24 @@ void mtsSensableHD::Run(void)
 
         // apply forces if needed
         if (device->m_cf_mode) {
-            hdSetDoublev(HD_CURRENT_FORCE, device->m_servo_cf.Force().Pointer());
+            vct3 force = device->m_servo_cf.Force().Ref<3>();
+            force -= device->m_servo_cf_viscosity * device->m_measured_cv.VelocityLinear();
+            double forceNorm = force.Norm();
+            if (forceNorm > device->m_max_force) {
+                force.Multiply(device->m_max_force / forceNorm);
+            }
+            hdSetDoublev(HD_CURRENT_FORCE, force.Pointer());
         } else if (device->m_cp_mode) {
             // very simple PID on position
             vct3 positionError;
             vct3 measured_cp = device->Frame4x4TranslationRef;
             measured_cp.Multiply(cmn_mm);
             positionError.DifferenceOf(measured_cp, device->m_servo_cp.Goal().Translation());
-            vct3 force = -100.0 * positionError;
+            vct3 force = -device->m_servo_cp_p_gain * positionError;
+            force -= device->m_servo_cp_d_gain * device->m_measured_cv.VelocityLinear();
             double forceNorm = force.Norm();
-            const double maxForce = 1.5;
-            if (forceNorm > maxForce) {
-                force.Multiply(maxForce / forceNorm);
+            if (forceNorm > device->m_max_force) {
+                force.Multiply(device->m_max_force / forceNorm);
             }
             hdSetDoublev(HD_CURRENT_FORCE, force.Pointer());
         }
@@ -305,8 +363,7 @@ void mtsSensableHD::Configure(const std::string & filename)
     if (filename == "") {
         m_devices.resize(1);
         m_handles.resize(1);
-        m_devices.at(0) = new mtsSensableHDDevice;
-        m_devices.at(0)->m_name = "arm";
+        m_devices.at(0) = new mtsSensableHDDevice("arm");
         SetupInterfaces();
         return;
     }
@@ -327,11 +384,39 @@ void mtsSensableHD::Configure(const std::string & filename)
     m_devices.resize(devices.size());
     m_handles.resize(devices.size());
     for (unsigned int index = 0; index < devices.size(); ++index) {
-        m_devices.at(index) = new mtsSensableHDDevice;
         jsonValue = devices[index]["name"];
         if (!jsonValue.empty()) {
-            m_devices.at(index)->m_name = jsonValue.asString();
-            m_devices.at(index)->m_use_default_handle = false;
+            std::string deviceName = jsonValue.asString();
+            mtsSensableHDDevice * device = new mtsSensableHDDevice(deviceName);
+            m_devices.at(index) = device;
+            device->m_use_default_handle = false;
+            // look for extra settings, servo_cf_viscosity
+            jsonValue = devices[index]["servo_cf_viscosity"];
+            if (!jsonValue.empty()) {
+                double newValue = jsonValue.asDouble();
+                CMN_LOG_CLASS_INIT_WARNING << "Configure: setting servo_cf_viscosity for \"" << deviceName
+                                           << "\" to " << newValue << ", default value was: "
+                                           << device->m_servo_cf_viscosity << std::endl;
+                device->m_servo_cf_viscosity = newValue;
+            }
+            // servo_cp_p_gain
+            jsonValue = devices[index]["servo_cp_p_gain"];
+            if (!jsonValue.empty()) {
+                double newValue = jsonValue.asDouble();
+                CMN_LOG_CLASS_INIT_WARNING << "Configure: setting servo_cp_p_gain for \"" << deviceName
+                                           << "\" to " << newValue << ", default value was: "
+                                           << device->m_servo_cp_p_gain << std::endl;
+                device->m_servo_cp_p_gain = newValue;
+            }
+            // servo_cp_d_gain
+            jsonValue = devices[index]["servo_cp_d_gain"];
+            if (!jsonValue.empty()) {
+                double newValue = jsonValue.asDouble();
+                CMN_LOG_CLASS_INIT_WARNING << "Configure: setting servo_cp_d_gain for \"" << deviceName
+                                           << "\" to " << newValue << ", default value was: "
+                                           << device->m_servo_cp_d_gain << std::endl;
+                device->m_servo_cp_d_gain = newValue;
+            }
         } else {
             CMN_LOG_CLASS_INIT_ERROR << "Configure: no \"name\" found for device " << index << std::endl;
             exit(EXIT_FAILURE);
@@ -356,41 +441,6 @@ void mtsSensableHD::SetupInterfaces(void)
         device = m_devices.at(index);
         CMN_ASSERT(device);
         m_handles.at(index) = new mtsSensableHDHandle;
-
-        device->m_operating_state.State() = prmOperatingState::ENABLED;
-        // for now, assume this is homed, until we can figure out issue with inkwell
-        device->m_operating_state.IsHomed() = true;
-        device->m_operating_state.Valid() = true;
-        device->m_cp_mode = false;
-        device->m_cf_mode = false;
-
-        device->Frame4x4TranslationRef.SetRef(device->Frame4x4.Column(3), 0);
-        device->Frame4x4RotationRef.SetRef(device->Frame4x4, 0, 0);
-        device->m_measured_js.Name().SetSize(NB_JOINTS);
-        device->m_measured_js.Name().at(0) = "waist";
-        device->m_measured_js.Name().at(1) = "shoulder";
-        device->m_measured_js.Name().at(2) = "elbow";
-        device->m_measured_js.Name().at(3) = "yaw";
-        device->m_measured_js.Name().at(4) = "pitch";
-        device->m_measured_js.Name().at(5) = "roll";
-        device->m_measured_js.Position().SetSize(NB_JOINTS);
-        device->GimbalPositionJointRef.SetRef(device->m_measured_js.Position(), 3, 3);
-        device->m_measured_js.Effort().SetSize(NB_JOINTS);
-        device->GimbalEffortJointRef.SetRef(device->m_measured_js.Effort(), 3, 3);
-
-        device->m_configuration_js.Name() = device->m_measured_js.Name();
-        device->m_configuration_js.Type().SetSize(NB_JOINTS);
-        device->m_configuration_js.Type().SetAll(PRM_JOINT_REVOLUTE);
-        device->m_configuration_js.Valid() = true;
-
-        device->m_measured_cp.SetReferenceFrame(device->m_name + "_base");
-        device->m_measured_cp.SetMovingFrame(device->m_name);
-        // set to zero
-        device->m_measured_js.Position().SetAll(0.0);
-        device->m_measured_js.Effort().SetAll(0.0);
-        device->m_measured_cv.VelocityLinear().SetAll(0.0);
-        device->m_measured_cv.VelocityAngular().SetAll(0.0);
-        device->m_measured_cf.Force().SetAll(0.0);
 
         // create interface with the device name, i.e. the map key
         CMN_LOG_CLASS_INIT_DEBUG << "SetupInterfaces: creating interface \""

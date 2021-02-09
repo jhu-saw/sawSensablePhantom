@@ -5,7 +5,7 @@
   Author(s): Anton Deguet
   Created on: 2008-04-04
 
-  (C) Copyright 2008-2020 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2008-2021 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -33,8 +33,6 @@ class CISST_EXPORT mtsSensableHD: public mtsTaskFromCallbackAdapter {
     CMN_DECLARE_SERVICES(CMN_DYNAMIC_CREATION_ONEARG, CMN_LOG_ALLOW_DEFAULT);
 
  public:
-    enum {NB_JOINTS = 6};
-
     /*! Default constructor, will use the default device connected and
       create and interface named "Default Arm" */
     inline mtsSensableHD(const std::string & componentName):
