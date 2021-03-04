@@ -11,6 +11,10 @@
     uri: https://github.com/collaborative-robotics/crtk_msgs
     version: master
 - git:
+    local-name: crtk/crtk_python_client
+    uri: https://github.com/collaborative-robotics/crtk_python_client
+    version: master
+- git:
     local-name: cisst-saw/cisst-ros
     uri: https://github.com/jhu-cisst/cisst-ros
     version: devel

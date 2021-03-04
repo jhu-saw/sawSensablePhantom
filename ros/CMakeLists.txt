@@ -70,6 +70,9 @@ if (cisst_FOUND_AS_REQUIRED)
                            ${catkin_LIBRARIES})
     cisst_target_link_libraries (sensable_phantom ${REQUIRED_CISST_LIBRARIES})
 
+    # for python "client"
+    catkin_python_setup ()
+
   else (sawSensablePhantom_FOUND)
     message ("Information: code in ${CMAKE_CURRENT_SOURCE_DIR} will not be compiled, it requires sawSensablePhantom")
   endif (sawSensablePhantom_FOUND)
