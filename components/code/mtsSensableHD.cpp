@@ -71,8 +71,10 @@ public:
         m_operating_state.State() = prmOperatingState::ENABLED;
 
         // for now, assume this is homed, until we can figure out issue with inkwell
-        m_operating_state.IsHomed() = true;
+        m_operating_state.IsHomed() = false;
         m_operating_state.Valid() = true;
+        m_calibration_style = 0;
+
         m_cp_mode = false;
         m_cf_mode = false;
 
@@ -107,6 +109,8 @@ public:
 
     prmOperatingState m_operating_state;
     mtsFunctionWrite m_operating_state_event;
+    int m_calibration_style;
+    double m_time_last_calibration_message = -60.0 * 60 * cmn_s; // make it very old
 
     inline void state_command(const std::string & command) {
         std::string humanReadableMessage;
@@ -115,13 +119,20 @@ public:
             if (m_operating_state.ValidCommand(prmOperatingState::CommandTypeFromString(command),
                                                newOperatingState, humanReadableMessage)) {
                 if (command == "enable") {
-                    m_cp_mode = true;
-                    m_cf_mode = true;
+                    m_cp_mode = false;
+                    m_cf_mode = false;
                     m_operating_state.State() = prmOperatingState::ENABLED;
                 } else if (command == "disable") {
                     m_cp_mode = false;
                     m_cf_mode = false;
                     m_operating_state.State() = prmOperatingState::DISABLED;
+                } else if (command == "home") {
+                    m_interface->SendWarning(this->m_name + ": \"home\" has no effect, homing is performed by the device");
+                } else if (command == "unhome") {
+                    m_operating_state.IsHomed() = false; // way to trigger a check in control loop
+                    m_cp_mode = false;
+                    m_cf_mode = false;
+                    hdDisable(HD_FORCE_OUTPUT);
                 } else {
                     m_interface->SendStatus(this->m_name + ": state command \""
                                             + command + "\" is not supported yet");
@@ -206,6 +217,7 @@ void mtsSensableHD::Run(void)
     mtsSensableHDDevice * device;
     mtsSensableHDHandle * handle;
     HHD hHD;
+    HDErrorInfo error;
 
     for (size_t index = 0; index != nbDevices; index++) {
         current_buttons = 0;
@@ -215,20 +227,34 @@ void mtsSensableHD::Run(void)
         hHD = handle->m_device_handle;
         hdMakeCurrentDevice(hHD);
 
-#if 0
-        bool inInkwell = false;
-        HDboolean inkwellSwitch;
-        hdGetBooleanv(HD_CURRENT_INKWELL_SWITCH, &inkwellSwitch);
-        inInkwell = !inkwellSwitch;
-        HDErrorInfo error;
-        if (HD_DEVICE_ERROR(error = hdGetError())) {
-            CMN_LOG_RUN_ERROR << "mtsSensableHDCallback: device error detected \""
-                              << hdGetErrorString(error.errorCode) << "\"" << std::endl;
-        }
-        std::cerr << inInkwell;
-#endif
-
         hdBeginFrame(hHD);
+
+        // check calibration if not homed
+        if (!device->m_operating_state.IsHomed()) {
+            
+            // detect changes in calibration
+            bool homed = (hdCheckCalibration() == HD_CALIBRATION_OK);
+            if (homed) { 
+                device->m_operating_state.IsHomed() = homed;
+                device->m_operating_state_event(device->m_operating_state);
+                device->m_cp_mode = false;
+                device->m_cf_mode = false;
+                hdEnable(HD_FORCE_OUTPUT);
+            } else {
+                hdUpdateCalibration(device->m_calibration_style);
+                if (HD_DEVICE_ERROR(error = hdGetError())) {
+                    device->m_interface->SendError(device->m_name + ": calibration failed " + hdGetErrorString(error.errorCode));
+                }
+                // send message every 30 seconds
+                const double now = this->StateTable.GetTic();
+                if ((now - device->m_time_last_calibration_message) > 30.0 * cmn_s) {
+                    // record time
+                    device->m_time_last_calibration_message = now;
+                    device->m_interface->SendWarning(device->m_name + ": calibration required");
+                }
+            }
+        }
+            
         // get the current cartesian position of the device
         hdGetDoublev(HD_CURRENT_TRANSFORM, device->Frame4x4.Pointer());
         // retrieve cartesian velocities, write directly in state data
@@ -331,7 +357,6 @@ void mtsSensableHD::Run(void)
     }
 
     // check for errors and abort the callback if a scheduler error
-    HDErrorInfo error;
     if (HD_DEVICE_ERROR(error = hdGetError())) {
         CMN_LOG_RUN_ERROR << "mtsSensableHDCallback: device error detected \""
                           << hdGetErrorString(error.errorCode) << "\"" << std::endl;
@@ -574,44 +599,24 @@ void mtsSensableHD::Create(void * CMN_UNUSED(data))
         device->m_interface->SendStatus(device->m_name + ": found serial number \""
                                         + hdGetString(HD_DEVICE_SERIAL_NUMBER) + "\"");
 
-#if 0
-        int calibrationStyle;
+
         int supportedCalibrationStyles;
         HDErrorInfo error;
 
         hdGetIntegerv(HD_CALIBRATION_STYLE, &supportedCalibrationStyles);
         if (supportedCalibrationStyles & HD_CALIBRATION_ENCODER_RESET) {
-            calibrationStyle = HD_CALIBRATION_ENCODER_RESET;
-            std::cerr << "HD_CALIBRATION_ENCODER_RESET..." << std::endl;
+            device->m_calibration_style = HD_CALIBRATION_ENCODER_RESET;
+            device->m_interface->SendStatus(device->m_name + ": calibration uses encoder reset");
         }
         if (supportedCalibrationStyles & HD_CALIBRATION_INKWELL) {
-            calibrationStyle = HD_CALIBRATION_INKWELL;
-            std::cerr << "HD_CALIBRATION_INKWELL..." << std::endl;
+            device->m_calibration_style = HD_CALIBRATION_INKWELL;
+            device->m_interface->SendStatus(device->m_name + ": calibration uses inkwell");
         }
         if (supportedCalibrationStyles & HD_CALIBRATION_AUTO) {
-            calibrationStyle = HD_CALIBRATION_AUTO;
-            std::cerr << "HD_CALIBRATION_AUTO..." << std::endl;
+            device->m_calibration_style = HD_CALIBRATION_AUTO;
+            device->m_interface->SendStatus(device->m_name + ": calibration is automatic");
         }
 
-        do {
-            hdUpdateCalibration(calibrationStyle);
-            std::cerr << "Phantom Omni needs to be calibrated, please put the stylus in the well." << std::endl;
-            if (HD_DEVICE_ERROR(error = hdGetError())) {
-                std::cerr << "Calibration failed: " << error << std::endl;
-            }
-            HDboolean inInkwell;
-            hdGetBooleanv(HD_CURRENT_INKWELL_SWITCH, &inInkwell);
-            if (inInkwell) {
-                std::cerr << "+";
-            } else {
-                std::cerr << "-";
-            }
-            osaSleep(1.0 * cmn_s);
-        }   while (hdCheckCalibration() != HD_CALIBRATION_OK);
-        std::cerr << "Phantom Omni calibration complete." << std::endl;
-#endif
-
-        hdEnable(HD_FORCE_OUTPUT);
     }
 
     // Schedule the main callback that will communicate with the device
