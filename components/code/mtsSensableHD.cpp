@@ -70,6 +70,9 @@ public:
         m_servo_cp_d_gain = 3.0;
         m_operating_state.State() = prmOperatingState::ENABLED;
 
+        // tool tip offset
+        m_tip_offset.Translation().Z() = -0.04; // ~40 mm
+
         // for now, assume this is homed, until we can figure out issue with inkwell
         m_operating_state.IsHomed() = false;
         m_operating_state.Valid() = true;
@@ -97,8 +100,12 @@ public:
         m_configuration_js.Type().SetAll(PRM_JOINT_REVOLUTE);
         m_configuration_js.Valid() = true;
 
-        m_measured_cp.SetReferenceFrame(m_name + "_base");
+        m_measured_cp.SetReferenceFrame("base");
         m_measured_cp.SetMovingFrame(m_name);
+
+        m_tip_measured_cp.SetReferenceFrame("base");
+        m_tip_measured_cp.SetMovingFrame(m_name + "_tip");
+
         // set to zero
         m_measured_js.Position().SetAll(0.0);
         m_measured_js.Effort().SetAll(0.0);
@@ -188,6 +195,10 @@ public:
     prmConfigurationJoint m_configuration_js;
     vctDynamicVectorRef<double> GimbalPositionJointRef, GimbalEffortJointRef;
 
+    // tip
+    prmPositionCartesianGet m_tip_measured_cp;
+    vctFrm3 m_tip_offset;
+
     // mtsFunction called to broadcast the event
     mtsFunctionWrite m_button1_event, m_button2_event, m_state_event;
 
@@ -231,10 +242,11 @@ void mtsSensableHD::Run(void)
 
         // check calibration if not homed
         if (!device->m_operating_state.IsHomed()) {
-            
+
             // detect changes in calibration
             bool homed = (hdCheckCalibration() == HD_CALIBRATION_OK);
-            if (homed) { 
+            if (homed) {
+                device->m_interface->SendStatus(device->m_name + ": calibration complete");
                 device->m_operating_state.IsHomed() = homed;
                 device->m_operating_state_event(device->m_operating_state);
                 device->m_cp_mode = false;
@@ -254,7 +266,7 @@ void mtsSensableHD::Run(void)
                 }
             }
         }
-            
+
         // get the current cartesian position of the device
         hdGetDoublev(HD_CURRENT_TRANSFORM, device->Frame4x4.Pointer());
         // retrieve cartesian velocities, write directly in state data
@@ -315,6 +327,17 @@ void mtsSensableHD::Run(void)
         device->m_measured_cp.Position().Translation().Multiply(cmn_mm);
         device->m_measured_cp.Position().Rotation().Assign(device->Frame4x4RotationRef);
 
+        // compute tip position
+        device->m_tip_measured_cp.Position() = device->m_measured_cp.Position() * device->m_tip_offset;
+
+        // update joint values, Omni gives us actuator values for first 3 joints
+        device->m_measured_js.Position()[0] = -device->m_measured_js.Position()[0];
+        device->m_measured_js.Position()[2] -= device->m_measured_js.Position()[1];
+        // gimbals pots are absolute but have offsets, these might be device dependents?
+        device->m_measured_js.Position()[3] = -device->m_measured_js.Position()[3] - 210.0 * cmnPI_180;
+        device->m_measured_js.Position()[4] = -device->m_measured_js.Position()[4] - 160.0 * cmnPI_180;
+        device->m_measured_js.Position()[5] = device->m_measured_js.Position()[5] + cmnPI;
+
         // compare to previous value to create events
         if (current_buttons != device->m_buttons) {
             int currentButtonState, previousButtonState;
@@ -354,6 +377,7 @@ void mtsSensableHD::Run(void)
         device->m_measured_cp.Valid() = true;
         device->m_measured_cv.Valid() = true;
         device->m_measured_cf.Valid() = true;
+        device->m_tip_measured_cp.Valid() = true;
     }
 
     // check for errors and abort the callback if a scheduler error
@@ -368,6 +392,7 @@ void mtsSensableHD::Run(void)
             device->m_measured_cp.Valid() = false;
             device->m_measured_cv.Valid() = false;
             device->m_measured_cf.Valid() = false;
+            device->m_tip_measured_cp.Valid() = false;
             device->m_interface->SendError(device->m_name + ": fatal error in scheduler callback \""
                                            + hdGetErrorString(error.errorCode) + "\"");
         }
@@ -478,22 +503,25 @@ void mtsSensableHD::SetupInterfaces(void)
 
         // add the state data to the table
         this->StateTable.AddData(device->m_operating_state, device->m_name + "_operating_state");
+        this->StateTable.AddData(device->m_measured_js, device->m_name + "_measured_js");
         this->StateTable.AddData(device->m_measured_cp, device->m_name + "_measured_cp");
         this->StateTable.AddData(device->m_measured_cv, device->m_name + "_measured_cv");
         this->StateTable.AddData(device->m_measured_cf, device->m_name + "_measured_cf");
-        this->StateTable.AddData(device->m_measured_js, device->m_name + "_measured_js");
+        this->StateTable.AddData(device->m_tip_measured_cp, device->m_name + "_tip_measured_cp");
         this->StateTable.AddData(device->m_servo_cf, device->m_name + "_servo_cf");
         this->StateTable.AddData(device->m_buttons, device->m_name + "_buttons");
 
         // provide read methods for state data
+        provided->AddCommandReadState(this->StateTable, device->m_measured_js,
+                                      "measured_js");
         provided->AddCommandReadState(this->StateTable, device->m_measured_cp,
                                       "measured_cp");
         provided->AddCommandReadState(this->StateTable, device->m_measured_cv,
                                       "measured_cv");
         provided->AddCommandReadState(this->StateTable, device->m_measured_cf,
                                       "measured_cf");
-        provided->AddCommandReadState(this->StateTable, device->m_measured_js,
-                                      "measured_js");
+        provided->AddCommandReadState(this->StateTable, device->m_tip_measured_cp,
+                                      "tip/measured_cp");
 
         // commands
         provided->AddCommandWrite(&mtsSensableHDDevice::servo_cf,
