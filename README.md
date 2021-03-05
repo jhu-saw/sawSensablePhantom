@@ -1,3 +1,24 @@
+<!--ts-->
+   * [sawSensablePhantom](#sawsensablephantom)
+   * [Links](#links)
+   * [Dependencies](#dependencies)
+   * [Running the examples](#running-the-examples)
+      * [Linux installation](#linux-installation)
+      * [Configuration](#configuration)
+      * [Compilation](#compilation)
+      * [Main example](#main-example)
+      * [ROS](#ros)
+         * [Sensable node](#sensable-node)
+         * [RViz](#rviz)
+         * [Python client](#python-client)
+      * [OpenIGTLink (aka igtl)](#openigtlink-aka-igtl)
+         * [Dynamic loading](#dynamic-loading)
+         * [Testing with <em>pyigtl</em>](#testing-with-pyigtl)
+
+<!-- Added by: anton, at: 2021-03-05T11:48-05:00 -->
+
+<!--te-->
+
 # sawSensablePhantom
 
 This SAW component contains code for interfacing with the Sensable Phantom Omni.  It compiles on Windows and Linux.  It has been tested with:
@@ -101,6 +122,8 @@ Some examples of configuration files can be found in the `share` directory.  Her
 
 ## ROS
 
+### Sensable node
+
 The ROS node is `sensable_phantom` and can be found in the package `sensable_phantom_ros`.  If you only have one Omni and don't need a configuration file:
 ```
 rosrun sensable_phantom_ros sensable_phantom
@@ -137,12 +160,31 @@ Once the node is started AND connected, the following ROS topics should appear:
 /stats/subscribers/period_statistics
 ```
 
+### RViz
+
 After you've started the `sensable_phantom` node, you can also visualize the Omni in RViz using:
 ```sh
 roslaunch sensable_phantom_ros rviz.launch
 ```
 
+You can also start both the sensable node and RViz using:
+```sh
+roslaunch sensable_phantom_ros arm_rviz.launch
+```
+
 Note: urdf and models provided in this repository are from https://github.com/fsuarez6/phantom_omni
+
+### Python client
+
+We use the [CRTK python client](https://github.com/collaborative-robotics/crtk_python_client) library to provide a simple Python API over ROS.  After building the code using `catkin build` and making sure your paths are set properly (something like `source ~/catkin_ws/devel/setup.bash`) you can use Python (or ipython) to do something like:
+```python
+import sensable
+arm = sensable.arm('/arm') # the parameter is the ROS namespace for your device
+arm.measured_cp() # returns a PyKDL frame with the current cartesian position
+...
+```
+
+See script examples under `ros/scripts`.
 
 ## OpenIGTLink (aka `igtl`)
 
