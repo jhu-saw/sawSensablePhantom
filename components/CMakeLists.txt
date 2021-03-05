@@ -1,5 +1,5 @@
 #
-# (C) Copyright 2011-2020 Johns Hopkins University (JHU), All Rights Reserved.
+# (C) Copyright 2011-2021 Johns Hopkins University (JHU), All Rights Reserved.
 #
 # --- begin cisst license - do not edit ---
 #
@@ -26,6 +26,14 @@ if (cisst_FOUND_AS_REQUIRED)
 
   # load cisst configuration
   include (${CISST_USE_FILE})
+
+  # make sure CISST_USE_SI_UNITS is defined and set to 1
+  if (NOT DEFINED CISST_USE_SI_UNITS)
+    message (FATAL_ERROR "You need to upgrade to a version of cisst that defines CISST_USE_SI_UNITS (and set CISST_USE_SI_UNITS to ON)")
+  endif ()
+  if (NOT CISST_USE_SI_UNITS)
+    message (FATAL_ERROR "You need to make sure CISST_USE_SI_UNITS to ON")
+  endif ()
 
   # catkin/ROS paths
   cisst_is_catkin_build (sawSensablePhantom_IS_CATKIN_BUILT)
