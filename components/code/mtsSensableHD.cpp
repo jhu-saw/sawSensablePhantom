@@ -60,7 +60,9 @@ public:
 
     enum {NB_JOINTS = 6};
 
-    inline mtsSensableHDDevice(const std::string & name) {
+    inline mtsSensableHDDevice(const std::string & system_name,
+                               const std::string & name) {
+        m_system_name = system_name;
         m_name = name;
 
         // some default values
@@ -71,7 +73,7 @@ public:
         m_operating_state.State() = prmOperatingState::ENABLED;
 
         // tool tip offset
-        m_tip_offset.Translation().Z() = -0.04; // ~40 mm
+        m_tip_offset.Translation().Z() = -0.039; // ~39 mm
 
         // for now, assume this is homed, until we can figure out issue with inkwell
         m_operating_state.IsHomed() = false;
@@ -171,6 +173,8 @@ public:
             m_cp_mode = true;
             m_cf_mode = false;
             m_servo_cp = position;
+            // apply base frame
+            m_servo_cp.Goal() = m_base_frame.Inverse() * m_servo_cp.Goal();
         }
     }
 
@@ -195,6 +199,9 @@ public:
     prmConfigurationJoint m_configuration_js;
     vctDynamicVectorRef<double> GimbalPositionJointRef, GimbalEffortJointRef;
 
+    // base frame
+    vctFrm3 m_base_frame;
+
     // tip
     prmPositionCartesianGet m_tip_measured_cp;
     vctFrm3 m_tip_offset;
@@ -215,7 +222,7 @@ public:
     vctFixedSizeConstMatrixRef<double, 3, 3,
                                Frame4x4Type::ROWSTRIDE, Frame4x4Type::COLSTRIDE> Frame4x4RotationRef;
 
-    std::string m_name;
+    std::string m_system_name, m_name;
     bool m_use_default_handle = true;
 };
 
@@ -326,6 +333,8 @@ void mtsSensableHD::Run(void)
         device->m_measured_cp.Position().Translation().Assign(device->Frame4x4TranslationRef);
         device->m_measured_cp.Position().Translation().Multiply(cmn_mm);
         device->m_measured_cp.Position().Rotation().Assign(device->Frame4x4RotationRef);
+        // apply base frame
+        device->m_measured_cp.Position() = device->m_base_frame * device->m_measured_cp.Position();
 
         // compute tip position
         device->m_tip_measured_cp.Position() = device->m_measured_cp.Position() * device->m_tip_offset;
@@ -413,7 +422,7 @@ void mtsSensableHD::Configure(const std::string & filename)
     if (filename == "") {
         m_devices.resize(1);
         m_handles.resize(1);
-        m_devices.at(0) = new mtsSensableHDDevice("arm");
+        m_devices.at(0) = new mtsSensableHDDevice("arm", "arm");
         SetupInterfaces();
         return;
     }
@@ -436,36 +445,61 @@ void mtsSensableHD::Configure(const std::string & filename)
     for (unsigned int index = 0; index < devices.size(); ++index) {
         jsonValue = devices[index]["name"];
         if (!jsonValue.empty()) {
-            std::string deviceName = jsonValue.asString();
-            mtsSensableHDDevice * device = new mtsSensableHDDevice(deviceName);
+            std::string system_name = jsonValue.asString();
+
+            // rename?
+            std::string name = system_name;
+            jsonValue = devices[index]["rename"];
+            if (!jsonValue.empty()) {
+                name = jsonValue.asString();
+            }
+
+            // create the "device"
+            mtsSensableHDDevice * device = new mtsSensableHDDevice(system_name, name);
             m_devices.at(index) = device;
+
+            // not using default handle
             device->m_use_default_handle = false;
+
             // look for extra settings, servo_cf_viscosity
             jsonValue = devices[index]["servo_cf_viscosity"];
             if (!jsonValue.empty()) {
                 double newValue = jsonValue.asDouble();
-                CMN_LOG_CLASS_INIT_WARNING << "Configure: setting servo_cf_viscosity for \"" << deviceName
+                CMN_LOG_CLASS_INIT_WARNING << "Configure: setting servo_cf_viscosity for \"" << name
                                            << "\" to " << newValue << ", default value was: "
                                            << device->m_servo_cf_viscosity << std::endl;
                 device->m_servo_cf_viscosity = newValue;
             }
+
             // servo_cp_p_gain
             jsonValue = devices[index]["servo_cp_p_gain"];
             if (!jsonValue.empty()) {
                 double newValue = jsonValue.asDouble();
-                CMN_LOG_CLASS_INIT_WARNING << "Configure: setting servo_cp_p_gain for \"" << deviceName
+                CMN_LOG_CLASS_INIT_WARNING << "Configure: setting servo_cp_p_gain for \"" << name
                                            << "\" to " << newValue << ", default value was: "
                                            << device->m_servo_cp_p_gain << std::endl;
                 device->m_servo_cp_p_gain = newValue;
             }
+
             // servo_cp_d_gain
             jsonValue = devices[index]["servo_cp_d_gain"];
             if (!jsonValue.empty()) {
                 double newValue = jsonValue.asDouble();
-                CMN_LOG_CLASS_INIT_WARNING << "Configure: setting servo_cp_d_gain for \"" << deviceName
+                CMN_LOG_CLASS_INIT_WARNING << "Configure: setting servo_cp_d_gain for \"" << name
                                            << "\" to " << newValue << ", default value was: "
                                            << device->m_servo_cp_d_gain << std::endl;
                 device->m_servo_cp_d_gain = newValue;
+            }
+
+            // base-frame
+            jsonValue = devices[index]["base-frame"];
+            if (!jsonValue.empty()) {
+                vctFrm4x4 frame;
+                cmnDataJSON<vctFrm4x4>::DeSerializeText(frame, jsonValue);
+                CMN_LOG_CLASS_INIT_WARNING << "Configure: setting base_frame for \"" << name
+                                           << "\" to:\n" << frame << "\ndefault value was:\n"
+                                           << device->m_base_frame << std::endl;
+                device->m_base_frame.From(frame);
             }
         } else {
             CMN_LOG_CLASS_INIT_ERROR << "Configure: no \"name\" found for device " << index << std::endl;
@@ -611,15 +645,17 @@ void mtsSensableHD::Create(void * CMN_UNUSED(data))
         if (device->m_use_default_handle) {
             handle->m_device_handle = hdInitDevice(NULL);
         } else {
-            handle->m_device_handle = hdInitDevice(device->m_name.c_str());
+            handle->m_device_handle = hdInitDevice(device->m_system_name.c_str());
         }
         if (HD_DEVICE_ERROR(error = hdGetError())) {
             device->m_interface->SendError(device->m_name + ": failed to initialize device \""
+                                           + device->m_system_name + "\": error \""
                                            + hdGetErrorString(error.errorCode) + "\"");
             device->m_device_available = false;
             return;
         } else {
-            device->m_interface->SendStatus(device->m_name + ": device initialized");
+            device->m_interface->SendStatus(device->m_name + ": device initialized using \""
+                                            + device->m_system_name + "\"");
         }
         device->m_device_available = true;
         device->m_interface->SendStatus(device->m_name + ": found device model \""
