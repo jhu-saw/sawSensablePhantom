@@ -1,5 +1,5 @@
 #
-# (C) Copyright 2017-2020 Johns Hopkins University (JHU), All Rights Reserved.
+# (C) Copyright 2017-2021 Johns Hopkins University (JHU), All Rights Reserved.
 #
 # --- begin cisst license - do not edit ---
 #
@@ -23,7 +23,7 @@ set (REQUIRED_CISST_LIBRARIES cisstCommon
                               cisstParameterTypesQt)
 
 # find cisst and make sure the required libraries have been compiled
-find_package (cisst 1.0.10 REQUIRED ${REQUIRED_CISST_LIBRARIES})
+find_package (cisst 1.1.0 REQUIRED ${REQUIRED_CISST_LIBRARIES})
 
 if (cisst_FOUND_AS_REQUIRED)
 
@@ -38,7 +38,7 @@ if (cisst_FOUND_AS_REQUIRED)
 
   # sawSensablePhantom has been compiled within cisst, we should find it automatically
   find_package (sawSensablePhantom 1.0.0)
-  find_package (sawOpenIGTLink 1.1.0)
+  find_package (sawOpenIGTLink 1.2.0)
 
   if (sawSensablePhantom_FOUND AND sawOpenIGTLink_FOUND AND CISST_HAS_QT)
 

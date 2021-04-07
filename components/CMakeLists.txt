@@ -20,7 +20,7 @@ set (REQUIRED_CISST_LIBRARIES
      cisstMultiTask
      cisstParameterTypes)
 
-find_package (cisst 1.0.6 REQUIRED ${REQUIRED_CISST_LIBRARIES})
+find_package (cisst 1.1.0 REQUIRED ${REQUIRED_CISST_LIBRARIES})
 
 if (cisst_FOUND_AS_REQUIRED)
 
