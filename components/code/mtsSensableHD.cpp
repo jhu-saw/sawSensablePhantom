@@ -73,7 +73,7 @@ public:
         m_operating_state.State() = prmOperatingState::ENABLED;
 
         // tool tip offset
-        m_tip_offset.Translation().Z() = -0.039; // ~39 mm
+        m_tip_offset = -0.039; // ~39 mm
 
         // for now, assume this is homed, until we can figure out issue with inkwell
         m_operating_state.IsHomed() = false;
@@ -204,7 +204,7 @@ public:
 
     // tip
     prmPositionCartesianGet m_tip_measured_cp;
-    vctFrm3 m_tip_offset;
+    double m_tip_offset;
 
     // mtsFunction called to broadcast the event
     mtsFunctionWrite m_button1_event, m_button2_event, m_state_event;
@@ -337,7 +337,10 @@ void mtsSensableHD::Run(void)
         device->m_measured_cp.Position() = device->m_base_frame * device->m_measured_cp.Position();
 
         // compute tip position
-        device->m_tip_measured_cp.Position() = device->m_measured_cp.Position() * device->m_tip_offset;
+        device->m_tip_measured_cp.Position().Rotation() = vctMatRot3::Identity();
+        device->m_tip_measured_cp.Position().Translation()
+            = device->m_measured_cp.Position().Translation()
+            + device->m_tip_offset * device->m_measured_cp.Position().Rotation().Column(2);
 
         // update joint values, Omni gives us actuator values for first 3 joints
         device->m_measured_js.Position()[0] = -device->m_measured_js.Position()[0];
