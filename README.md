@@ -36,14 +36,14 @@ The `ros` folder contains code for a ROS node that interfaces with the sawSensab
  * Sensable SDK and drivers, see below
  * Qt for user interface
  * ROS (optional)
- 
+
 # Running the examples
- 
+
 ## Linux installation
 
 The first thing to do is to install the drivers.  The vendor's version is rather old and incompatible with most recent Linux distributions.  You can find plenty of how-tos online to patch the driver installation but these tend to be incomplete.  So we created a nifty little script to do the work:  https://github.com/jhu-cisst-external/phantom-omni-1394-drivers
- 
-The Phantom Omni uses a FireWire port to communicate.  When connecting your tracker to your computer, a pseudo device will be added to the `/dev` directory.   Usually something like `/dev/fw1`, `/dev/fw2` or higher.  Using the command `dmesg -w` can help identify which device is used.  First start `dmesg -w` in a terminal, then plug your device.  You should see something like: 
+
+The Phantom Omni uses a FireWire port to communicate.  When connecting your tracker to your computer, a pseudo device will be added to the `/dev` directory.   Usually something like `/dev/fw1`, `/dev/fw2` or higher.  Using the command `dmesg -w` can help identify which device is used.  First start `dmesg -w` in a terminal, then plug your device.  You should see something like:
 ```
 [33217.952060] firewire_core 0000:04:00.0: phy config: new root=ffc1, gap_count=5
 [33224.507217] firewire_core 0000:04:00.0: phy config: new root=ffc1, gap_count=5
@@ -64,7 +64,7 @@ sudo PHANToMConfiguration
 ```
 In the application, select the *PHANToM Model*.  You should see a serial number appear on the bottom right if everything is working fine.  Click *Add...* and then give your device a name (e.g. "left").  Don't forget to *Apply* before quitting using *Ok*.
 
-In theory, one should be able to have multiple Phantom Omnis on a single computer but so far we were not able to do this on Linux.   If you do figure out a solution, please let us know.   As a stop gap solution, one can use ROS as middleware and 2 computers, one for each Omni. 
+In theory, one should be able to have multiple Phantom Omnis on a single computer but so far we were not able to do this on Linux.   If you do figure out a solution, please let us know.   As a stop gap solution, one can use ROS as middleware and 2 computers, one for each Omni.
 
 ## Compilation
 
@@ -132,7 +132,7 @@ rosrun sensable_phantom_ros sensable_phantom
 If you have more than one Omni, please read the section above for the configuration file description.
 ```sh
 roscd sensable_phantom_config
-rosrun sensable_phantom_ros sensable_phantom -D -j sawSensablePhantomLeft.json 
+rosrun sensable_phantom_ros sensable_phantom -D -j sawSensablePhantomLeft.json
 ```
 
 The ROS node has one more command line option:
@@ -165,6 +165,11 @@ Once the node is started AND connected, the following ROS topics should appear:
 After you've started the `sensable_phantom` node, you can also visualize the Omni in RViz using:
 ```sh
 roslaunch sensable_phantom_ros rviz.launch
+```
+
+If the arm has a different name (e.g. `right`), use:
+```sh
+roslaunch sensable_phantom_ros rviz.launch arm:=right
 ```
 
 You can also start both the sensable node and RViz using:
@@ -212,3 +217,47 @@ client.send_message(transform_message) # send the message.  At that point, the O
 ```
 
 To disable position control, send a command to `servo_cf` with a null wrench (i.e. zero forces).
+
+
+
+## Network based Touch (Geomagic/3Dsystems Touch)
+
+Used as reference for reported joint positions and updated Omni URDF model.
+
+Joints:
+* waist:
+  * positive direction is toward left
+  * zero is when facing user, grooves in house align between base and sphere
+  * range is about -55 to 55
+* shoulder:
+  * positive direction is moving link up
+  * zero is when link is horinzontal
+  * range is about 0 to 100
+* elbow:
+  * positive direction is moving link up
+  * zero is when link is orthogonal to previous link
+  * range is about -45 to 70
+* yaw:
+  * positive direction is when rotating stylus to the right
+  * zero is when stylus handle is towards user, grooves in housing align between wish-bone shaped link and arm
+  * range is about -145 to 145
+* pitch:
+  * positive direction is when handle is lifted, tip going down
+  * zero is when stylus is orthogonal to wish-bone link
+  * range is about -80 to 55
+* roll
+  * position direction is when rolling to the right
+  * zero is when buttons are up
+  * range is about -150 to 150
+
+### Installation
+
+Remove older drivers and OpenHaptics for FireWire based devices (there might be ways to have both installed simultaneously but not sure).
+
+Driver install and configuration:  https://s3.amazonaws.com/dl.3dsystems.com/binaries/Sensable/Linux/Installation+Instructions.pdf
+
+Open Haptics v3.4 link: https://support.3dsystems.com/s/article/OpenHaptics-for-Linux-Developer-Edition-v34?language=en_US
+
+Notes:
+* In `~/.bashrc`, add something like `export GTDD_HOME=/usr/share/3DSystems`.  It's strange because installer also creates a rule in `/etc/profile.d/openhaptics.sh` to set  `OH_SDK_BASE`.
+* In directory `/usr/share/3DSystems/config`, the program `Touch_Setup` creates files for each arm.

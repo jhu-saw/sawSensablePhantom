@@ -104,13 +104,13 @@
     <parent link="lower_arm" />
     <child link="wrist" />
     <origin xyz="0 0.08 0" />
-    <axis xyz="0 1 0" />
+    <axis xyz="0 -1 0" />
     <limit lower="3.92" upper="8.83" velocity="100" effort="5" />
   </joint>
   <joint name="pitch" type="revolute" >
     <parent link="wrist" />
     <child link="tip" />
-    <origin xyz="0 0.0525 0" rpy="0.5 0 0" />
+    <origin xyz="0 0.0525 0" rpy="1.5708 0 0" />
     <axis xyz="1 0 0" />
     <limit lower="-0.5" upper="1.75" velocity="100" effort="5" />
   </joint>

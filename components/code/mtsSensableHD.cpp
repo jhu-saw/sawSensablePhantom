@@ -346,9 +346,9 @@ void mtsSensableHD::Run(void)
         device->m_measured_js.Position()[0] = -device->m_measured_js.Position()[0];
         device->m_measured_js.Position()[2] -= device->m_measured_js.Position()[1];
         // gimbals pots are absolute but have offsets, these might be device dependents?
-        device->m_measured_js.Position()[3] = -device->m_measured_js.Position()[3] - 210.0 * cmnPI_180;
-        device->m_measured_js.Position()[4] = -device->m_measured_js.Position()[4] - 160.0 * cmnPI_180;
-        device->m_measured_js.Position()[5] = device->m_measured_js.Position()[5] + cmnPI;
+        device->m_measured_js.Position()[3] = device->m_measured_js.Position()[3];
+        device->m_measured_js.Position()[4] = device->m_measured_js.Position()[4];
+        device->m_measured_js.Position()[5] = device->m_measured_js.Position()[5];
 
         // compare to previous value to create events
         if (current_buttons != device->m_buttons) {
