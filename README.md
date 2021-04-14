@@ -254,10 +254,20 @@ Joints:
 
 Remove older drivers and OpenHaptics for FireWire based devices (there might be ways to have both installed simultaneously but not sure).
 
-Driver install and configuration:  https://s3.amazonaws.com/dl.3dsystems.com/binaries/Sensable/Linux/Installation+Instructions.pdf
+Driver install and configuration:
+
+* Linux page with links to Open Haptics v3.4 and Touch Device Driver v2019.2.15
+https://support.3dsystems.com/s/article/OpenHaptics-for-Linux-Developer-Edition-v34?language=en_US
+
+* https://support.3dsystems.com/s/article/Haptic-Device-Drivers?language=en_US
+* Windows instructions: https://s3.amazonaws.com/dl.3dsystems.com/binaries/Sensable/Linux/Installation+Instructions.pdf
 
 Open Haptics v3.4 link: https://support.3dsystems.com/s/article/OpenHaptics-for-Linux-Developer-Edition-v34?language=en_US
 
 Notes:
 * In `~/.bashrc`, add something like `export GTDD_HOME=/usr/share/3DSystems`.  It's strange because installer also creates a rule in `/etc/profile.d/openhaptics.sh` to set  `OH_SDK_BASE`.
-* In directory `/usr/share/3DSystems/config`, the program `Touch_Setup` creates files for each arm.
+* In directory `/usr/share/3DSystems/config`, the program `Touch_Setup` creates files for each arm
+
+Removing files:
+* To remove the 3DS provided SDK, use script `uninstall-3ds-openhaptics-3.4.sh` from this repository
+* To remove the 3DS provided drivers (`2019_2_15`) use the script `uninstall-3ds-touch-2019.sh` from this repository
