@@ -105,6 +105,12 @@ public:
         m_measured_cp.SetReferenceFrame("base");
         m_measured_cp.SetMovingFrame(m_name);
 
+        m_joint_offsets.SetSize(NB_JOINTS);
+        m_joint_offsets.SetAll(0.0);
+
+        m_joint_scales.SetSize(NB_JOINTS);
+        m_joint_scales.SetAll(1.0);
+
         m_tip_measured_cp.SetReferenceFrame("base");
         m_tip_measured_cp.SetMovingFrame(m_name + "_tip");
 
@@ -173,8 +179,6 @@ public:
             m_cp_mode = true;
             m_cf_mode = false;
             m_servo_cp = position;
-            // apply base frame
-            m_servo_cp.Goal() = m_base_frame.Inverse() * m_servo_cp.Goal();
         }
     }
 
@@ -199,8 +203,8 @@ public:
     prmConfigurationJoint m_configuration_js;
     vctDynamicVectorRef<double> GimbalPositionJointRef, GimbalEffortJointRef;
 
-    // base frame
-    vctFrm3 m_base_frame;
+    // joint scales and offsets
+    vctDoubleVec m_joint_scales, m_joint_offsets;
 
     // tip
     prmPositionCartesianGet m_tip_measured_cp;
@@ -329,12 +333,14 @@ void mtsSensableHD::Run(void)
         // time stamp used to date data
         mtsStateIndex stateIndex = this->StateTable.GetIndexWriter();
 
+        // add joint offsets to joint positions
+        device->m_measured_js.Position().ElementwiseMultiply(device->m_joint_scales);
+        device->m_measured_js.Position().Add(device->m_joint_offsets);
+
         // copy transformation to the state table
         device->m_measured_cp.Position().Translation().Assign(device->Frame4x4TranslationRef);
         device->m_measured_cp.Position().Translation().Multiply(cmn_mm);
         device->m_measured_cp.Position().Rotation().Assign(device->Frame4x4RotationRef);
-        // apply base frame
-        device->m_measured_cp.Position() = device->m_base_frame * device->m_measured_cp.Position();
 
         // compute tip position
         device->m_tip_measured_cp.Position().Rotation() = vctMatRot3::Identity();
@@ -494,15 +500,32 @@ void mtsSensableHD::Configure(const std::string & filename)
                 device->m_servo_cp_d_gain = newValue;
             }
 
-            // base-frame
-            jsonValue = devices[index]["base-frame"];
+            // joint-scales
+            jsonValue = devices[index]["joint-scales"];
             if (!jsonValue.empty()) {
-                vctFrm4x4 frame;
-                cmnDataJSON<vctFrm4x4>::DeSerializeText(frame, jsonValue);
-                CMN_LOG_CLASS_INIT_WARNING << "Configure: setting base_frame for \"" << name
-                                           << "\" to:\n" << frame << "\ndefault value was:\n"
-                                           << device->m_base_frame << std::endl;
-                device->m_base_frame.From(frame);
+                cmnDataJSON<vctDoubleVec>::DeSerializeText(device->m_joint_scales, jsonValue);
+                CMN_LOG_CLASS_INIT_WARNING << "Configure: setting joint-scales for \"" << name
+                                           << "\" to:\n" << device->m_joint_scales << std::endl;
+                const size_t nb = device->m_joint_scales.size();
+                if (nb != 6) {
+                    CMN_LOG_CLASS_INIT_ERROR << "Configure: invalid number of joint scales for " << name
+                                             << ", found " << nb << " but expected 6 values" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+            }
+
+            // joint-offsets
+            jsonValue = devices[index]["joint-offsets"];
+            if (!jsonValue.empty()) {
+                cmnDataJSON<vctDoubleVec>::DeSerializeText(device->m_joint_offsets, jsonValue);
+                CMN_LOG_CLASS_INIT_WARNING << "Configure: setting joint-offsets for \"" << name
+                                           << "\" to:\n" << device->m_joint_offsets << std::endl;
+                const size_t nb = device->m_joint_offsets.size();
+                if (nb != 6) {
+                    CMN_LOG_CLASS_INIT_ERROR << "Configure: invalid number of joint offsets for " << name
+                                             << ", found " << nb << " but expected 6 values" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
             }
         } else {
             CMN_LOG_CLASS_INIT_ERROR << "Configure: no \"name\" found for device " << index << std::endl;
@@ -668,7 +691,6 @@ void mtsSensableHD::Create(void * CMN_UNUSED(data))
 
 
         int supportedCalibrationStyles;
-        HDErrorInfo error;
 
         hdGetIntegerv(HD_CALIBRATION_STYLE, &supportedCalibrationStyles);
         if (supportedCalibrationStyles & HD_CALIBRATION_ENCODER_RESET) {

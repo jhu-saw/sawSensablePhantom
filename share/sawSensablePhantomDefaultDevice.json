@@ -3,7 +3,8 @@
     "devices":
     [
         {
-            "name": "Default Device"
+            "name": "Default Device",
+            "rename": "arm"
         }
     ]
 }
