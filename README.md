@@ -3,10 +3,10 @@
    * [Links](#links)
    * [Dependencies](#dependencies)
    * [Running the examples](#running-the-examples)
-      * [Linux installation](#linux-installation)
-      * [Configuration](#configuration)
+      * [Drivers](#drivers)
       * [Compilation](#compilation)
       * [Main example](#main-example)
+      * [Calibration](#calibration)
       * [ROS](#ros)
          * [Sensable node](#sensable-node)
          * [RViz](#rviz)
@@ -21,9 +21,9 @@
 
 # sawSensablePhantom
 
-This SAW component contains code for interfacing with the Sensable Phantom Omni.  It compiles on Windows and Linux.  It has been tested with:
-  * Linux Ubuntu 16.04 and 18.04 and Windows
-  * Sensable Phantom Omni 1394 but it might work with other haptic devices from Sensable or 3DS (assuming the C API is the same)
+This SAW component contains code for interfacing with the SensAble *PHANTOM Omni* and the Geomagic/3DS *Touch*.  It compiles on Windows and Linux.  It has been tested with:
+  * Linux Ubuntu 16.04, 18.04 and 20.04 and Windows
+  * SensAble *Phantom Omni* (FireWire/1394) and 3DS *Touch* (Ethernet) but it might work with other haptic devices from SensAble or 3DS (assuming the C API is the same)
 
 The `ros` folder contains code for a ROS node that interfaces with the sawSensablePhantom component and publishes the 3D transformations, joint positions and efforts, buttons...  It also has subscribers to control the Omni (i.e. set cartesian wrench).  To build the ROS node, make sure you use `catkin build`.
 
@@ -97,6 +97,57 @@ Some examples of configuration files can be found in the `share` directory.  Her
 }
 ```
 
+## Calibration
+
+We found that the Sensable *PHANTOM Omni* is not reporting the gimbal values the same way the Geomagic/3DS *Touch* does.  The issue might be due to lack of support for the calibration procedure in the older drivers/setup programs for the *PHANTOM Omni*.
+
+So for this implementation we use the convention from the Geomagic/3DS *Touch*, i.e. the joint directions and origins are defined as follows:
+* waist:
+  * positive direction is toward left
+  * zero is when facing user, grooves in house align between base and sphere
+  * range is about -55 to 55
+* shoulder:
+  * positive direction is moving link up
+  * zero is when link is horinzontal
+  * range is about 0 to 100
+* elbow:
+  * positive direction is moving link up
+  * zero is when link is orthogonal to previous link
+  * range is about -45 to 70
+* yaw:
+  * positive direction is when rotating stylus to the right
+  * zero is when stylus handle is towards user, grooves in housing align between wish-bone shaped link and arm
+  * range is about -145 to 145
+* pitch:
+  * positive direction is when handle is lifted, tip going down
+  * zero is when stylus is orthogonal to wish-bone link
+  * range is about -80 to 55
+* roll
+  * position direction is when rolling to the right
+  * zero is when buttons are up
+  * range is about -150 to 150
+
+We found that the older SensAble *PHANTOM Omni* didn't follow these convention for the last 3 joints (gimbal).  We haven't figured out and easy fix so we provide a way to load some scales and offsets in a configuration file.  For example:
+```json
+{
+    "devices":
+    [
+        {
+            "name": "Default PHANToM",  // name defined in driver
+            "rename": "arm",  // name from there on (optional)
+            "servo_cf_viscosity": 3.0,
+            "servo_cp_p_gain": 50.0,
+            "servo_cp_d_gain": 5.0,
+            "joint-scales": [1.0, 1.0, 1.0, 1.0, -1.0, 1.0],
+            "joint-offsets": [0.0, 0.0, 0.0, 3.66519, -3.80482, 3.08923]
+        }
+    ]
+}
+```
+To find the offsets, place the stylus in the inkwell then quit the application (we're not sure why but this is needed).  Then restart the application with stylus in the inkwell, stylus buttons on the top.  Check the reported joint angles in the GUI.  Ideally the values should be around [0, 15, -36, 0, 45, 0].  If they are not, compute the difference in degrees (**only for the last 3 values, leave the first 3 top zero**), convert to radians and update your device configuration file (see example above).  Then quit and restart the application to make sure your offsets are loaded properly.
+
+As to why this is needed, our guess is that the first 3 joints are using relative encoders that can be preloaded when the stylus is in the inkwell.  The gimbal likely uses potentiometers (they're a bit noisy and always moving) so they could be calibrated just once but unfortunately we don't have access to that API so we have to maintain our own offsets.
+
 ## ROS
 
 ### Sensable node
@@ -147,14 +198,14 @@ roslaunch sensable_phantom_ros rviz.launch
 If the arm has a different name (e.g. `right`), use:
 ```sh
 roslaunch sensable_phantom_ros rviz.launch arm:=right
-```
+```drivers.md
 
 You can also start both the sensable node and RViz using:
 ```sh
 roslaunch sensable_phantom_ros arm_rviz.launch
 ```
 
-Note: urdf and models provided in this repository are from https://github.com/fsuarez6/phantom_omni
+Note: urdf and models provided in this repository are based on files from https://github.com/fsuarez6/phantom_omni
 
 ### Python client
 
@@ -194,57 +245,3 @@ client.send_message(transform_message) # send the message.  At that point, the O
 ```
 
 To disable position control, send a command to `servo_cf` with a null wrench (i.e. zero forces).
-
-
-
-## Network based Touch (Geomagic/3Dsystems Touch)
-
-Used as reference for reported joint positions and updated Omni URDF model.
-
-Joints:
-* waist:
-  * positive direction is toward left
-  * zero is when facing user, grooves in house align between base and sphere
-  * range is about -55 to 55
-* shoulder:
-  * positive direction is moving link up
-  * zero is when link is horinzontal
-  * range is about 0 to 100
-* elbow:
-  * positive direction is moving link up
-  * zero is when link is orthogonal to previous link
-  * range is about -45 to 70
-* yaw:
-  * positive direction is when rotating stylus to the right
-  * zero is when stylus handle is towards user, grooves in housing align between wish-bone shaped link and arm
-  * range is about -145 to 145
-* pitch:
-  * positive direction is when handle is lifted, tip going down
-  * zero is when stylus is orthogonal to wish-bone link
-  * range is about -80 to 55
-* roll
-  * position direction is when rolling to the right
-  * zero is when buttons are up
-  * range is about -150 to 150
-
-### Installation
-
-Remove older drivers and OpenHaptics for FireWire based devices (there might be ways to have both installed simultaneously but not sure).
-
-Driver install and configuration:
-
-* Linux page with links to Open Haptics v3.4 and Touch Device Driver v2019.2.15
-https://support.3dsystems.com/s/article/OpenHaptics-for-Linux-Developer-Edition-v34?language=en_US
-
-* https://support.3dsystems.com/s/article/Haptic-Device-Drivers?language=en_US
-* Windows instructions: https://s3.amazonaws.com/dl.3dsystems.com/binaries/Sensable/Linux/Installation+Instructions.pdf
-
-Open Haptics v3.4 link: https://support.3dsystems.com/s/article/OpenHaptics-for-Linux-Developer-Edition-v34?language=en_US
-
-Notes:
-* In `~/.bashrc`, add something like `export GTDD_HOME=/usr/share/3DSystems`.  It's strange because installer also creates a rule in `/etc/profile.d/openhaptics.sh` to set  `OH_SDK_BASE`.
-* In directory `/usr/share/3DSystems/config`, the program `Touch_Setup` creates files for each arm
-
-Removing files:
-* To remove the 3DS provided SDK, use script `uninstall-3ds-openhaptics-3.4.sh` from this repository
-* To remove the 3DS provided drivers (`2019_2_15`) use the script `uninstall-3ds-touch-2019.sh` from this repository
