@@ -144,9 +144,9 @@ We found that the older SensAble *PHANTOM Omni* didn't follow these convention f
     ]
 }
 ```
-To find the offsets, place the stylus in the inkwell then quit the application (we're not sure why but this is needed).  Then restart the application with stylus in the inkwell, stylus buttons on the top.  Check the reported joint angles in the GUI.  Ideally the values should be around [0, 15, -36, 0, 45, 0].  If they are not, compute the difference in degrees (**only for the last 3 values, leave the first 3 top zero**), convert to radians and update your device configuration file (see example above).  Then quit and restart the application to make sure your offsets are loaded properly.
+To find the offsets, place the stylus in the inkwell then quit the application (we're not sure why but this is needed).  Then restart the application with stylus in the inkwell, stylus buttons on the top.  Check the reported joint angles in the GUI.  Ideally the values should be around [0, 15, -36, 0, 45, 0].  If they are not, compute the difference in degrees (**only for the last 3 values, leave the first 3 at zero**), convert to radians and update your device configuration file (see example above).  Then quit and restart the application to make sure your offsets are loaded properly.
 
-As to why this is needed, our guess is that the first 3 joints are using relative encoders that can be preloaded when the stylus is in the inkwell.  The gimbal likely uses potentiometers (they're a bit noisy and always moving) so they could be calibrated just once but unfortunately we don't have access to that API so we have to maintain our own offsets.
+As to why this is needed, our guess is that the first 3 joints are using relative encoders that can be preloaded when the stylus is in the inkwell.  The gimbal likely uses potentiometers (they're a bit noisy and always moving) so they could be calibrated just once but unfortunately we don't have access to that API so we have to maintain our own offsets.  Also, if you have a better solution, please let us know!
 
 ## ROS
 
