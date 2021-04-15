@@ -7,9 +7,11 @@ In theory OpenHaptics should support many devices across different OSs but in pr
 
 # SensAble *PHANTOM Omni*
 
-This is the original Omni and many labs have some of these collecting dust on shelves.  The main issue is that these systems use a FireWire interface.  FireWire is a bit dated but it's still possible to find cheap adapters for modern desktop computers (~$50).  It's a bit more challenging to find support for laptops.
+This is the original Omni and many labs have some of these collecting dust on shelves.  These systems use a FireWire interface.  FireWire is a bit dated but it's still possible to find cheap adapters for modern desktop computers (~$50).  It's a bit more challenging to find support for laptops.
 
 ## Drivers
+
+If you have used the same computer with the 3DS drivers for the Ethernet based *Touch*, **remove these drivers**.  There is a couple of scripts provided in this repository to remove the drivers and OpenHaptics (in directory 'utils').
 
 The main issue with the SensAble *Omni* is that the drivers for a modern Linux are hard to find.   The vendor's version is rather old and incompatible with most recent Linux distributions.  You can find plenty of how-tos online to patch the driver installation but these tend to be incomplete.  So we created a nifty little script to do the work:  https://github.com/jhu-cisst-external/phantom-omni-1394-drivers
 
@@ -24,7 +26,7 @@ Check the file permissions on said device, e.g.,
 crw------- 1 root root    243, 0 Mar 22 14:10 /dev/fw0
 crw-rw---- 1 root plugdev 243, 1 Mar 23 18:19 /dev/fw1
 ```
-By default the drivers are configured so the OS sets the ownership of `/dev/fw1` to `root` and the group to `plugdev`.   To grant permissions to read and write to the device, use the command `sudo adduser <user_id> plugdev` to add users to the `plugdev` group.   Please note that the user has to logout/login for the new group membership to take effect.
+By default the drivers are configured so the OS sets the ownership of `/dev/fw1` to `root` and the group to `plugdev`.  To grant permissions to read and write to the device, use the command `sudo adduser <user_id> plugdev` to add users to the `plugdev` group.   Please note that the user has to logout/login for the new group membership to take effect.
 
 ## Configuration
 
@@ -38,7 +40,7 @@ In theory, one should be able to have multiple Phantom Omnis on a single compute
 
 # Geomagic/3DS Ethernet *Touch*
 
-The Geomagic/3DS looks like the original PHANTOM Omni except that the base is a couple of inches taller and has Ethernet ports instead of FireWire.  The drivers from the vendor (3DS) should be used along their version of OpenHaptics (3.4 on Linux).
+The Geomagic/3DS looks like the original PHANTOM Omni except that the base is a couple of inches taller and has Ethernet ports instead of FireWire.  The drivers from the vendor (3DS) should be used along their version of OpenHaptics (3.4 on Linux).  Some of these devices might come with a USB based Ethernet adaptor so they can be used with computer.  At the end, the actual communication is performed over an Ethernet port configured with *Link-Local*.
 
 ## Drivers
 
@@ -50,8 +52,8 @@ Driver install and configuration:
 * Linux instructions: https://s3.amazonaws.com/dl.3dsystems.com/binaries/Sensable/Linux/Installation+Instructions.pdf
 
 Removing files:
-* To remove the 3DS provided SDK, use script `uninstall-3ds-openhaptics-3.4.sh` from this repository
-* To remove the 3DS provided drivers (`2019_2_15`) use the script `uninstall-3ds-touch-2019.sh` from this repository
+* To remove the 3DS provided SDK, use script `utils/uninstall-3ds-openhaptics-3.4.sh` from this repository
+* To remove the 3DS provided drivers (`2019_2_15`) use the script `utils/uninstall-3ds-touch-2019.sh` from this repository
 
 ## Configuration
 
