@@ -61,4 +61,4 @@ Use the provided `Touch_Setup` and `Touch_Diagnostic` to configure and test your
 
 # Geomagic *Touch Stylus*
 
-We got no luck getting this running, including with the 2019 3DS drivers.  See older notes in [3DS_USB_Touch.md](3DS_USB_Touch) if you want to give it a try.
+We got no luck getting this running, including with the 2019 3DS drivers.  See older notes in [3DS_USB_Touch.md](3DS_USB_Touch.md) if you want to give it a try.
