@@ -39,32 +39,9 @@ The `ros` folder contains code for a ROS node that interfaces with the sawSensab
 
 # Running the examples
 
-## Linux installation
+## Drivers
 
-The first thing to do is to install the drivers.  The vendor's version is rather old and incompatible with most recent Linux distributions.  You can find plenty of how-tos online to patch the driver installation but these tend to be incomplete.  So we created a nifty little script to do the work:  https://github.com/jhu-cisst-external/phantom-omni-1394-drivers
-
-The Phantom Omni uses a FireWire port to communicate.  When connecting your tracker to your computer, a pseudo device will be added to the `/dev` directory.   Usually something like `/dev/fw1`, `/dev/fw2` or higher.  Using the command `dmesg -w` can help identify which device is used.  First start `dmesg -w` in a terminal, then plug your device.  You should see something like:
-```
-[33217.952060] firewire_core 0000:04:00.0: phy config: new root=ffc1, gap_count=5
-[33224.507217] firewire_core 0000:04:00.0: phy config: new root=ffc1, gap_count=5
-[33224.691773] firewire_core 0000:04:00.0: created device fw1: GUID 000b990082b6980c, S400
-```
-Check the file permissions on said device, e.g.,
-```sh
-crw------- 1 root root    243, 0 Mar 22 14:10 /dev/fw0
-crw-rw---- 1 root plugdev 243, 1 Mar 23 18:19 /dev/fw1
-```
-By default the drivers are configured so the OS sets the ownership of `/dev/fw1` to `root` and the group to `plugdev`.   To grant permissions to read and write to the device, use the command `sudo adduser <user_id> plugdev` to add users to the `plugdev` group.   Please note that the user has to logout/login for the new group membership to take effect.
-
-## Configuration
-
-It is important to first run the Sensable provided configuration tool to make sure your device is properly detected and to name it (names are important if you have more than one Omni on the same computer).   To do so, you will have to run the `PHANToMConfiguration` program with admin privileges:
-```sh
-sudo PHANToMConfiguration
-```
-In the application, select the *PHANToM Model*.  You should see a serial number appear on the bottom right if everything is working fine.  Click *Add...* and then give your device a name (e.g. "left").  Don't forget to *Apply* before quitting using *Ok*.
-
-In theory, one should be able to have multiple Phantom Omnis on a single computer but so far we were not able to do this on Linux.   If you do figure out a solution, please let us know.   As a stop gap solution, one can use ROS as middleware and 2 computers, one for each Omni.
+On windows, follow the instructions from the vendor.  On Linux, please read [drivers.md](drivers.md)
 
 ## Compilation
 
