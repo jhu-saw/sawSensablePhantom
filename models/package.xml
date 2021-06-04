@@ -1,15 +1,12 @@
 <?xml version="1.0"?>
 <package>
-  <name>sensable_phantom_models</name>
+  <name>saw_sensable_phantom_models</name>
   <description>The omni_description package</description>
 
-  <version>0.1.0</version>
-  <maintainer email="fsuarez6@gmail.com">Francisco Suarez-Ruiz</maintainer>
+  <version>1.0.0</version>
+  <maintainer email="anton.deguet@jhu.edu">Anton Deguet</maintainer>
   <license>BSD</license>
-  <url type="website">https://github.com/fsuarez6/phantom_omni</url>
-  <url type="repository">https://github.com/fsuarez6/phantom_omni</url>
-  <author>Francisco Suarez-Ruiz</author>
-  
+
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>urdf</build_depend>
   <run_depend>urdf</run_depend>

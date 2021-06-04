@@ -127,14 +127,14 @@ So for this implementation we use the convention from the Geomagic/3DS *Touch*, 
   * zero is when buttons are up
   * range is about -150 to 150
 
-We found that the older SensAble *PHANTOM Omni* didn't follow these convention for the last 3 joints (gimbal).  We haven't figured out and easy fix so we provide a way to load some scales and offsets in a configuration file.  For example:
+We found that the older SensAble *PHANTOM Omni* didn't follow these convention for the last 3 joints (gimbal).  We haven't figured out an easy fix so we provide a way to load some scales and offsets in a custom configuration file that needs to be explicitely loaded:
 ```json
 {
     "devices":
     [
         {
-            "name": "Default PHANToM",  // name defined in driver
-            "rename": "arm",  // name from there on (optional)
+            "name": "Default PHANToM",  // name defined in driver/setup
+            "rename": "arm",  // name from there on (optional), used for interfaces (GUI/ROS/IGTL)
             "servo_cf_viscosity": 3.0,
             "servo_cp_p_gain": 50.0,
             "servo_cp_d_gain": 5.0,
@@ -147,6 +147,13 @@ We found that the older SensAble *PHANTOM Omni* didn't follow these convention f
 To find the offsets, place the stylus in the inkwell then quit the application (we're not sure why but this is needed).  Then restart the application with stylus in the inkwell, stylus buttons on the top.  Check the reported joint angles in the GUI.  Ideally the values should be around [0, 15, -36, 0, 45, 0].  If they are not, compute the difference in degrees (**only for the last 3 values, leave the first 3 at zero**), convert to radians and update your device configuration file (see example above).  Then quit and restart the application to make sure your offsets are loaded properly.
 
 As to why this is needed, our guess is that the first 3 joints are using relative encoders that can be preloaded when the stylus is in the inkwell.  The gimbal likely uses potentiometers (they're a bit noisy and always moving) so they could be calibrated just once but unfortunately we don't have access to that API so we have to maintain our own offsets.  Also, if you have a better solution, please let us know!
+
+With ROS, start the application with a configuration file using:
+```sh
+roscd saw_sensable_phantom_config
+rosrun sensable_phantom_ros sensable_phantom -j sawSensablePhantomDefault.json
+```
+Offsets might not be the same for all older *Omnis* so make sure the reported joint angles make sense.  You can also use ROS/RViz to visualize these angles (see below).
 
 ## ROS
 
@@ -198,7 +205,7 @@ roslaunch sensable_phantom_ros rviz.launch
 If the arm has a different name (e.g. `right`), use:
 ```sh
 roslaunch sensable_phantom_ros rviz.launch arm:=right
-```drivers.md
+```
 
 You can also start both the sensable node and RViz using:
 ```sh
