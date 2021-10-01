@@ -34,6 +34,9 @@ It is important to first run the SensAble provided configuration tool to make su
 ```sh
 sudo PHANToMConfiguration
 ```
+
+:warning: If you get an error related to `libglw`, you should install the package `libglw1-mesa` (for Ubuntu 18, name might be different on other distributions).
+
 In the application, select the *PHANToM Model*.  You should see a serial number appear on the bottom right if everything is working fine.  Click *Add...* and then give your device a name (e.g. "left").  Don't forget to *Apply* before quitting using *Ok*.
 
 In theory, one should be able to have multiple Phantom Omnis on a single computer but so far we were not able to do this on Linux.   If you do figure out a solution, please let us know.   As a stop gap solution, one can use ROS as middleware and 2 computers, one for each Omni.
