@@ -5,7 +5,7 @@
   Author(s):  Anton Deguet
   Created on: 2017-03-21
 
-  (C) Copyright 2017-2020 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2017-2021 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -24,7 +24,8 @@ http://www.cisst.org/cisst/license.txt.
 #include <sawSensablePhantom/mtsSensableHD.h>
 #include <sawSensablePhantom/mtsSensableHDQtWidget.h>
 
-#include <cisst_ros_crtk/mts_ros_crtk_bridge.h>
+#include <ros/ros.h>
+#include <cisst_ros_crtk/mts_ros_crtk_bridge_provided.h>
 
 #include <QApplication>
 #include <QMainWindow>
@@ -85,8 +86,8 @@ int main(int argc, char * argv[])
     componentManager->AddComponent(devices);
 
     // ROS CRTK bridge
-    mts_ros_crtk_bridge * crtk_bridge
-        = new mts_ros_crtk_bridge("sensable_phantom_crtk_bridge", &rosNodeHandle);
+    mts_ros_crtk_bridge_provided * crtk_bridge
+        = new mts_ros_crtk_bridge_provided("sensable_phantom_crtk_bridge", &rosNodeHandle);
     componentManager->AddComponent(crtk_bridge);
 
     // create a Qt user interface
