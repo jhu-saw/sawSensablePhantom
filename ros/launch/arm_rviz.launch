@@ -1,7 +1,7 @@
 <launch>
 
   <arg name="arm" default="arm"/>
-  <arg name="model" default="$(find sensable_phantom_models)/urdf/omni.urdf" />
+  <arg name="model" default="$(find saw_sensable_phantom_models)/urdf/omni.urdf" />
 
   <node name="sensable_phantom" pkg="sensable_phantom_ros" type="sensable_phantom" />
 
@@ -21,7 +21,7 @@
       <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
 
       <node name="rviz" pkg="rviz" type="rviz"
-	    args="-d $(find sensable_phantom_models)/rviz_config/$(arg arm).rviz" />
+	    args="-d $(find saw_sensable_phantom_models)/rviz_config/$(arg arm).rviz" />
 
   </group>
 

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package>
-  <name>sensable_phantom_config</name>
+  <name>saw_sensable_phantom_config</name>
   <version>1.0.0</version>
   <description>saw sensable phantom config files</description>
   <maintainer email="anton.deguet@jhu.edu">Anton Deguet</maintainer>
