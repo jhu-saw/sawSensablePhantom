@@ -1,5 +1,5 @@
 #
-# (C) Copyright 2014-2020 Johns Hopkins University (JHU), All Rights Reserved.
+# (C) Copyright 2014-2022 Johns Hopkins University (JHU), All Rights Reserved.
 #
 # --- begin cisst license - do not edit ---
 #
@@ -41,13 +41,13 @@ if (cisst_FOUND_AS_REQUIRED)
                ${sawSensablePhantom_HEADER_DIR}/mtsSensableHDQtWidget.h
                mtsSensableHDQtWidget.cpp
                ${SAW_SENSABLE_PHANTOM_QT_WRAP_CPP})
-  set_property (TARGET sawSensablePhantomQt PROPERTY FOLDER "sawSensablePhantom")
+  set_target_properties (sawSensablePhantomQt PROPERTIES
+    VERSION ${sawSensablePhantom_VERSION}
+    FOLDER "sawSensablePhantom")
   cisst_target_link_libraries (sawSensablePhantomQt ${REQUIRED_CISST_LIBRARIES})
 
-  # make sure the new library is known by the parent folder to add to the config file
-  set (sawSensablePhantomQt_LIBRARIES sawSensablePhantomQt PARENT_SCOPE)
 
-  install (TARGETS sawSensablePhantomQt
+  install (TARGETS sawSensablePhantomQt COMPONENT sawSensablePhantom-Qt
            RUNTIME DESTINATION bin
            LIBRARY DESTINATION lib
            ARCHIVE DESTINATION lib)

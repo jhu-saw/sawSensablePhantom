@@ -1,5 +1,5 @@
 #
-# (C) Copyright 2011-2021 Johns Hopkins University (JHU), All Rights Reserved.
+# (C) Copyright 2011-2022 Johns Hopkins University (JHU), All Rights Reserved.
 #
 # --- begin cisst license - do not edit ---
 #
@@ -9,10 +9,29 @@
 #
 # --- end cisst license ---
 
-project (sawSensablePhantomAll)
+cmake_minimum_required(VERSION 3.10)
+project (sawSensablePhantomAll VERSION 1.0.0)
 
-cmake_minimum_required (VERSION 2.8)
+find_package (cisst REQUIRED)
+include (${CISST_USE_FILE})
+cisst_cpack_settings (
+  VENDOR "JHU"
+  MAINTAINER "anton.deguet@jhu.edu")
 
 add_subdirectory (components)
+add_subdirectory (share)
+
+set (sawSensablePhantom_DIR "${sawSensablePhantomAll_BINARY_DIR}/components")
 add_subdirectory (examples)
 add_subdirectory (igtl)
+
+include (CPack)
+cpack_add_component (sawSensablePhantom)
+cpack_add_component (sawSensablePhantom-dev
+                     DEPENDS sawSensablePhantom)
+cpack_add_component (sawSensablePhantom-Share
+                     DEPENDS sawSensablePhantom)
+cpack_add_component (sawSensablePhantom-Qt
+                     DEPENDS sawSensablePhantom)
+cpack_add_component (sawSensablePhantom-Examples
+                     DEPENDS sawSensablePhantom sawSensablePhantom-Qt)
