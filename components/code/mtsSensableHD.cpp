@@ -5,7 +5,7 @@
   Author(s): Anton Deguet
   Created on: 2008-04-04
 
-  (C) Copyright 2008-2021 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2008-2022 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -105,6 +105,9 @@ public:
         m_measured_cp.SetReferenceFrame("base");
         m_measured_cp.SetMovingFrame(m_name);
 
+        m_setpoint_cp.SetReferenceFrame("base");
+        m_setpoint_cp.SetMovingFrame(m_name);
+
         m_joint_offsets.SetSize(NB_JOINTS);
         m_joint_offsets.SetAll(0.0);
 
@@ -174,12 +177,22 @@ public:
         }
     }
 
-    inline void servo_cp(const prmPositionCartesianSet & position) {
+    inline void servo_cp(const prmPositionCartesianSet & _setpoint_cp) {
         if (m_operating_state.State() == prmOperatingState::ENABLED) {
             m_cp_mode = true;
             m_cf_mode = false;
-            m_servo_cp = position;
+            m_setpoint_cp.Position() = _setpoint_cp.Goal();
         }
+    }
+
+    inline void Freeze(void) {
+        prmPositionCartesianSet setpoint;
+        setpoint.Goal() = m_measured_cp.Position();
+        servo_cp(setpoint);
+    }
+
+    inline void use_gravity_compensation(const bool &) {
+        // no method for this in HD.h
     }
 
     inline void get_button_names(std::list<std::string> & placeholder) const {
@@ -215,7 +228,7 @@ public:
 
     bool m_cp_mode, m_cf_mode;
     prmForceCartesianSet m_servo_cf;
-    prmPositionCartesianSet m_servo_cp;
+    prmPositionCartesianGet m_setpoint_cp;
     double m_max_force, m_servo_cp_p_gain, m_servo_cp_d_gain, m_servo_cf_viscosity;
 
     // local buffer used to store the position as provided
@@ -317,7 +330,7 @@ void mtsSensableHD::Run(void)
             vct3 positionError;
             vct3 measured_cp = device->Frame4x4TranslationRef;
             measured_cp.Multiply(cmn_mm);
-            positionError.DifferenceOf(measured_cp, device->m_servo_cp.Goal().Translation());
+            positionError.DifferenceOf(measured_cp, device->m_setpoint_cp.Position().Translation());
             vct3 force = -device->m_servo_cp_p_gain * positionError;
             force -= device->m_servo_cp_d_gain * device->m_measured_cv.VelocityLinear();
             double forceNorm = force.Norm();
@@ -341,6 +354,12 @@ void mtsSensableHD::Run(void)
         device->m_measured_cp.Position().Translation().Assign(device->Frame4x4TranslationRef);
         device->m_measured_cp.Position().Translation().Multiply(cmn_mm);
         device->m_measured_cp.Position().Rotation().Assign(device->Frame4x4RotationRef);
+        device->m_measured_cp.Position().Rotation().NormalizedSelf();
+
+        // update setpoint_cp if not in cp mode
+        if (!device->m_cp_mode) {
+            device->m_setpoint_cp.Position() = device->m_measured_cp.Position();
+        }
 
         // compute tip position
         device->m_tip_measured_cp.Position().Rotation() = vctMatRot3::Identity();
@@ -395,6 +414,7 @@ void mtsSensableHD::Run(void)
         device->m_measured_cp.Valid() = true;
         device->m_measured_cv.Valid() = true;
         device->m_measured_cf.Valid() = true;
+        device->m_setpoint_cp.Valid() = true;
         device->m_tip_measured_cp.Valid() = true;
     }
 
@@ -410,6 +430,7 @@ void mtsSensableHD::Run(void)
             device->m_measured_cp.Valid() = false;
             device->m_measured_cv.Valid() = false;
             device->m_measured_cf.Valid() = false;
+            device->m_setpoint_cp.Valid() = false;
             device->m_tip_measured_cp.Valid() = false;
             device->m_interface->SendError(device->m_name + ": fatal error in scheduler callback \""
                                            + hdGetErrorString(error.errorCode) + "\"");
@@ -567,6 +588,7 @@ void mtsSensableHD::SetupInterfaces(void)
         this->StateTable.AddData(device->m_measured_cp, device->m_name + "_measured_cp");
         this->StateTable.AddData(device->m_measured_cv, device->m_name + "_measured_cv");
         this->StateTable.AddData(device->m_measured_cf, device->m_name + "_measured_cf");
+        this->StateTable.AddData(device->m_setpoint_cp, device->m_name + "_setpoint_cp");
         this->StateTable.AddData(device->m_tip_measured_cp, device->m_name + "_tip_measured_cp");
         this->StateTable.AddData(device->m_servo_cf, device->m_name + "_servo_cf");
         this->StateTable.AddData(device->m_buttons, device->m_name + "_buttons");
@@ -582,12 +604,22 @@ void mtsSensableHD::SetupInterfaces(void)
                                       "measured_cf");
         provided->AddCommandReadState(this->StateTable, device->m_tip_measured_cp,
                                       "tip/measured_cp");
+        provided->AddCommandReadState(this->StateTable, device->m_setpoint_cp,
+                                      "setpoint_cp");
 
         // commands
         provided->AddCommandWrite(&mtsSensableHDDevice::servo_cf,
                                   device, "servo_cf");
+        provided->AddCommandWrite(&mtsSensableHDDevice::servo_cf,
+                                  device, "body/servo_cf");
         provided->AddCommandWrite(&mtsSensableHDDevice::servo_cp,
                                   device, "servo_cp");
+        provided->AddCommandWrite(&mtsSensableHDDevice::servo_cp,
+                                  device, "move_cp");
+        provided->AddCommandVoid(&mtsSensableHDDevice::Freeze,
+                                 device, "Freeze");
+        provided->AddCommandWrite(&mtsSensableHDDevice::use_gravity_compensation,
+                                  device, "use_gravity_compensation");
 
         // add a method to read the current state index
         provided->AddCommandRead(&mtsStateTable::GetIndexReader, &StateTable,
