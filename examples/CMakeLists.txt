@@ -34,13 +34,16 @@ if (cisst_FOUND_AS_REQUIRED)
   cisst_set_output_path ()
 
   # sawSensablePhantom has been compiled within cisst, we should find it automatically
+  find_package (sawController 2.0.0)
   find_package (sawSensablePhantom 1.0.0)
 
-  if (sawSensablePhantom_FOUND AND CISST_HAS_QT)
+  if (sawSensablePhantom_FOUND AND sawController_FOUND AND CISST_HAS_QT)
 
     # sawSensablePhantom configuration
     include_directories (${sawSensablePhantom_INCLUDE_DIR})
-    link_directories (${sawSensablePhantom_LIBRARY_DIR})
+    link_directories (
+      ${sawSensablePhantom_LIBRARY_DIR}
+      ${sawController_LIBRARY_DIR})
 
     add_executable (sawSensablePhantomQtExample main.cpp)
     set_target_properties (sawSensablePhantomQtExample PROPERTIES
@@ -62,8 +65,8 @@ if (cisst_FOUND_AS_REQUIRED)
              LIBRARY DESTINATION lib
              ARCHIVE DESTINATION lib)
 
-  else (sawSensablePhantom_FOUND AND CISST_HAS_QT)
+  else ()
     message ("Information: code in ${CMAKE_CURRENT_SOURCE_DIR} will not be compiled, it requires sawSensablePhantom and cisstQt")
-  endif (sawSensablePhantom_FOUND AND CISST_HAS_QT)
+  endif ()
 
 endif (cisst_FOUND_AS_REQUIRED)
