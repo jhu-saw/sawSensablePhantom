@@ -53,7 +53,10 @@ if (cisst_FOUND_AS_REQUIRED)
     find_package (Sensable)
   endif ()
 
-  if (SENSABLE_FOUND)
+  # for the cartesian impedence controller
+  find_package (sawControllers 2.0.0 REQUIRED)
+
+  if (SENSABLE_FOUND AND sawControllers_FOUND)
 
     # create/configure file for find_package (sawSensablePhantom)
     set (sawSensablePhantom_INCLUDE_DIR
@@ -63,7 +66,13 @@ if (cisst_FOUND_AS_REQUIRED)
     set (sawSensablePhantom_LIBRARY_DIR "${LIBRARY_OUTPUT_PATH}")
     set (sawSensablePhantom_LIBRARIES sawSensablePhantom ${SENSABLE_LIBRARIES})
 
-    include_directories (${SENSABLE_INCLUDE_DIR} ${sawSensablePhantom_INCLUDE_DIR})
+    include_directories (
+      ${SENSABLE_INCLUDE_DIR}
+      ${sawSensablePhantom_INCLUDE_DIR}
+      ${sawControllers_INCLUDE_DIR})
+
+    link_directories (
+      ${sawControllers_LIBRARY_DIR})
 
     # add Qt code
     if (CISST_HAS_QT)
@@ -82,14 +91,14 @@ if (cisst_FOUND_AS_REQUIRED)
     set_target_properties (sawSensablePhantom PROPERTIES
                            VERSION ${sawSensablePhantom_VERSION}
                            FOLDER "sawSensablePhantom")
-    target_link_libraries (sawSensablePhantom ${SENSABLE_LIBRARIES})
+    target_link_libraries (sawSensablePhantom ${SENSABLE_LIBRARIES} ${sawControllers_LIBRARIES})
     cisst_target_link_libraries (sawSensablePhantom ${REQUIRED_CISST_LIBRARIES})
 
     # Install target for headers and library
     install (DIRECTORY
              "${sawSensablePhantom_SOURCE_DIR}/include/sawSensablePhantom"
              DESTINATION include
-	     COMPONENT sawSensablePhantom-dev
+             COMPONENT sawSensablePhantom-dev
              PATTERN .svn EXCLUDE)
 
     install (TARGETS sawSensablePhantom COMPONENT sawSensablePhantom
@@ -97,9 +106,9 @@ if (cisst_FOUND_AS_REQUIRED)
              LIBRARY DESTINATION lib
              ARCHIVE DESTINATION lib)
 
-  else (SENSABLE_FOUND)
+  else ()
     message ("Information: code in ${CMAKE_CURRENT_SOURCE_DIR} requires Sensable.")
-  endif (SENSABLE_FOUND)
+  endif ()
 
 else (cisst_FOUND_AS_REQUIRED)
   message ("Information: code in ${CMAKE_CURRENT_SOURCE_DIR} will not be compiled, it requires ${REQUIRED_CISST_LIBRARIES}")

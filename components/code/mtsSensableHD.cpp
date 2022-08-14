@@ -39,6 +39,8 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstParameterTypes/prmPositionCartesianSet.h>
 #include <cisstParameterTypes/prmEventButton.h>
 
+#include <sawControllers/osaCartesianImpedanceController.h>
+
 CMN_IMPLEMENT_SERVICES_DERIVED_ONEARG(mtsSensableHD, mtsTaskFromCallback, mtsTaskConstructorArg);
 
 struct mtsSensableHDDriverData {
@@ -82,6 +84,8 @@ public:
 
         m_cp_mode = false;
         m_cf_mode = false;
+        m_ci_mode = false;
+        m_cartesian_impedance_controller = new osaCartesianImpedanceController();
 
         Frame4x4TranslationRef.SetRef(Frame4x4.Column(3), 0);
         Frame4x4RotationRef.SetRef(Frame4x4, 0, 0);
@@ -125,6 +129,12 @@ public:
         m_measured_cf.Force().SetAll(0.0);
     }
 
+    inline ~mtsSensableHDDevice() {
+        if (m_cartesian_impedance_controller) {
+            delete m_cartesian_impedance_controller;
+        }
+    }
+
     prmOperatingState m_operating_state;
     mtsFunctionWrite m_operating_state_event;
     int m_calibration_style;
@@ -139,10 +149,12 @@ public:
                 if (command == "enable") {
                     m_cp_mode = false;
                     m_cf_mode = false;
+                    m_ci_mode = false;
                     m_operating_state.State() = prmOperatingState::ENABLED;
                 } else if (command == "disable") {
                     m_cp_mode = false;
                     m_cf_mode = false;
+                    m_ci_mode = false;
                     m_operating_state.State() = prmOperatingState::DISABLED;
                 } else if (command == "home") {
                     m_interface->SendWarning(this->m_name + ": \"home\" has no effect, homing is performed by the device");
@@ -150,6 +162,7 @@ public:
                     m_operating_state.IsHomed() = false; // way to trigger a check in control loop
                     m_cp_mode = false;
                     m_cf_mode = false;
+                    m_ci_mode = false;
                     hdDisable(HD_FORCE_OUTPUT);
                 } else {
                     m_interface->SendStatus(this->m_name + ": state command \""
@@ -173,6 +186,7 @@ public:
         if (m_operating_state.State() == prmOperatingState::ENABLED) {
             m_cp_mode = false;
             m_cf_mode = true;
+            m_ci_mode = false;
             m_servo_cf = wrench;
         }
     }
@@ -181,6 +195,7 @@ public:
         if (m_operating_state.State() == prmOperatingState::ENABLED) {
             m_cp_mode = true;
             m_cf_mode = false;
+            m_ci_mode = false;
             m_setpoint_cp.Position() = _setpoint_cp.Goal();
         }
     }
@@ -191,8 +206,16 @@ public:
         servo_cp(setpoint);
     }
 
+    inline void servo_ci(const prmCartesianImpedanceGains & gains) {
+        if (m_operating_state.State() == prmOperatingState::ENABLED) {
+            m_cp_mode = false;
+            m_cf_mode = false;
+            m_ci_mode = true;
+            m_cartesian_impedance_controller->SetGains(gains);
+        }
+    }
+
     inline void use_gravity_compensation(const bool &) {
-        // no method for this in HD.h
     }
 
     inline void get_button_names(std::list<std::string> & placeholder) const {
@@ -201,8 +224,8 @@ public:
         placeholder.push_back(m_name + "Button2");
     }
 
-    mtsInterfaceProvided * m_interface;
-
+    mtsInterfaceProvided * m_interface = nullptr;
+    osaCartesianImpedanceController * m_cartesian_impedance_controller = nullptr;
     bool m_device_available;
 
     // local copy of the buttons state as defined by Sensable
@@ -226,7 +249,7 @@ public:
     // mtsFunction called to broadcast the event
     mtsFunctionWrite m_button1_event, m_button2_event, m_state_event;
 
-    bool m_cp_mode, m_cf_mode;
+    bool m_cp_mode, m_cf_mode, m_ci_mode; // this needs some cleanup, at least using an enum
     prmForceCartesianSet m_servo_cf;
     prmPositionCartesianGet m_setpoint_cp;
     double m_max_force, m_servo_cp_p_gain, m_servo_cp_d_gain, m_servo_cf_viscosity;
@@ -275,6 +298,7 @@ void mtsSensableHD::Run(void)
                 device->m_operating_state_event(device->m_operating_state);
                 device->m_cp_mode = false;
                 device->m_cf_mode = false;
+                device->m_ci_mode = false;
                 hdEnable(HD_FORCE_OUTPUT);
             } else {
                 hdUpdateCalibration(device->m_calibration_style);
@@ -316,23 +340,34 @@ void mtsSensableHD::Run(void)
         // retrieve the current button(s).
         hdGetIntegerv(HD_CURRENT_BUTTONS, &current_buttons);
 
+        bool forceApplied = false;
+        vct3 force;
         // apply forces if needed
         if (device->m_cf_mode) {
-            vct3 force = device->m_servo_cf.Force().Ref<3>();
+            force = device->m_servo_cf.Force().Ref<3>();
             force -= device->m_servo_cf_viscosity * device->m_measured_cv.VelocityLinear();
-            double forceNorm = force.Norm();
-            if (forceNorm > device->m_max_force) {
-                force.Multiply(device->m_max_force / forceNorm);
-            }
-            hdSetDoublev(HD_CURRENT_FORCE, force.Pointer());
+            forceApplied = true;
         } else if (device->m_cp_mode) {
             // very simple PID on position
             vct3 positionError;
             vct3 measured_cp = device->Frame4x4TranslationRef;
             measured_cp.Multiply(cmn_mm);
             positionError.DifferenceOf(measured_cp, device->m_setpoint_cp.Position().Translation());
-            vct3 force = -device->m_servo_cp_p_gain * positionError;
+            force = -device->m_servo_cp_p_gain * positionError;
             force -= device->m_servo_cp_d_gain * device->m_measured_cv.VelocityLinear();
+            forceApplied = true;
+        } else if (device->m_ci_mode) {
+            prmForceCartesianSet cf_set;
+            device->m_cartesian_impedance_controller
+                ->Update(device->m_measured_cp,
+                         device->m_measured_cv,
+                         cf_set,
+                         false /* use absolute orientation */);
+            force = cf_set.Force().Ref<3>(0); // we can apply torque
+            forceApplied = true;
+        }
+
+        if (forceApplied) {
             double forceNorm = force.Norm();
             if (forceNorm > device->m_max_force) {
                 force.Multiply(device->m_max_force / forceNorm);
@@ -618,6 +653,8 @@ void mtsSensableHD::SetupInterfaces(void)
                                   device, "move_cp");
         provided->AddCommandVoid(&mtsSensableHDDevice::Freeze,
                                  device, "Freeze");
+        provided->AddCommandWrite(&mtsSensableHDDevice::servo_ci,
+                                  device, "servo_ci");
         provided->AddCommandWrite(&mtsSensableHDDevice::use_gravity_compensation,
                                   device, "use_gravity_compensation");
 

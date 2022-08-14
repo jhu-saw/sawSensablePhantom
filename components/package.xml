@@ -10,6 +10,8 @@
 
   <build_depend>cisst</build_depend>
   <run_depend>cisst</run_depend>
+  <build_depend>saw_controllers</build_depend>
+  <run_depend>saw_controllers</run_depend>
 
   <export>
     <build_type>catkin</build_type>
