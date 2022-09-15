@@ -34,7 +34,7 @@ if (cisst_FOUND_AS_REQUIRED)
   cisst_set_output_path ()
 
   # sawSensablePhantom has been compiled within cisst, we should find it automatically
-  find_package (sawController 2.0.0)
+  find_package (sawControllers 2.0.0)
   find_package (sawSensablePhantom 1.0.0)
 
   if (sawSensablePhantom_FOUND AND sawController_FOUND AND CISST_HAS_QT)
