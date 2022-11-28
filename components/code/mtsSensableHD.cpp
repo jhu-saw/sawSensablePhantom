@@ -200,7 +200,7 @@ public:
         }
     }
 
-    inline void Freeze(void) {
+    inline void hold(void) {
         prmPositionCartesianSet setpoint;
         setpoint.Goal() = m_measured_cp.Position();
         servo_cp(setpoint);
@@ -651,8 +651,8 @@ void mtsSensableHD::SetupInterfaces(void)
                                   device, "servo_cp");
         provided->AddCommandWrite(&mtsSensableHDDevice::servo_cp,
                                   device, "move_cp");
-        provided->AddCommandVoid(&mtsSensableHDDevice::Freeze,
-                                 device, "Freeze");
+        provided->AddCommandVoid(&mtsSensableHDDevice::hold,
+                                 device, "hold");
         provided->AddCommandWrite(&mtsSensableHDDevice::servo_ci,
                                   device, "servo_ci");
         provided->AddCommandWrite(&mtsSensableHDDevice::use_gravity_compensation,
