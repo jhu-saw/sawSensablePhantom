@@ -19,6 +19,10 @@
     uri: https://github.com/jhu-cisst/cisst-ros
     version: devel
 - git:
+    local-name: cisst-saw/sawKeyboard
+    uri: https://github.com/jhu-saw/sawKeyboard
+    version: devel
+- git:
     local-name: cisst-saw/sawControllers
     uri: https://github.com/jhu-saw/sawControllers
     version: devel
