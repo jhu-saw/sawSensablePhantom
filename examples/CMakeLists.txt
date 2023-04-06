@@ -1,5 +1,5 @@
 #
-# (C) Copyright 2017-2022 Johns Hopkins University (JHU), All Rights Reserved.
+# (C) Copyright 2017-2023 Johns Hopkins University (JHU), All Rights Reserved.
 #
 # --- begin cisst license - do not edit ---
 #
@@ -37,7 +37,7 @@ if (cisst_FOUND_AS_REQUIRED)
   find_package (sawControllers 2.0.0)
   find_package (sawSensablePhantom 1.0.0)
 
-  if (sawSensablePhantom_FOUND AND sawController_FOUND AND CISST_HAS_QT)
+  if (sawSensablePhantom_FOUND AND sawControllers_FOUND AND CISST_HAS_QT)
 
     # sawSensablePhantom configuration
     include_directories (${sawSensablePhantom_INCLUDE_DIR})
