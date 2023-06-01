@@ -206,12 +206,12 @@ public:
         servo_cp(setpoint);
     }
 
-    inline void servo_ci(const prmCartesianImpedanceGains & gains) {
+    inline void servo_ci(const prmCartesianImpedance & goal) {
         if (m_operating_state.State() == prmOperatingState::ENABLED) {
             m_cp_mode = false;
             m_cf_mode = false;
             m_ci_mode = true;
-            m_cartesian_impedance_controller->SetGains(gains);
+            m_cartesian_impedance_controller->SetGoal(goal);
         }
     }
 
@@ -738,7 +738,7 @@ void mtsSensableHD::Create(void * CMN_UNUSED(data))
         handle = m_handles.at(index);
         CMN_ASSERT(device);
         if (device->m_use_default_handle) {
-            handle->m_device_handle = hdInitDevice(NULL);
+            handle->m_device_handle = hdInitDevice(HD_DEFAULT_DEVICE);
         } else {
             handle->m_device_handle = hdInitDevice(device->m_system_name.c_str());
         }
