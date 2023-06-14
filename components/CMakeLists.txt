@@ -1,5 +1,5 @@
 #
-# (C) Copyright 2011-2022 Johns Hopkins University (JHU), All Rights Reserved.
+# (C) Copyright 2011-2023 Johns Hopkins University (JHU), All Rights Reserved.
 #
 # --- begin cisst license - do not edit ---
 #
@@ -66,7 +66,7 @@ if (cisst_FOUND_AS_REQUIRED)
     set (sawSensablePhantom_LIBRARY_DIR "${LIBRARY_OUTPUT_PATH}")
     set (sawSensablePhantom_LIBRARIES sawSensablePhantom ${SENSABLE_LIBRARIES})
 
-    include_directories (
+    include_directories (BEFORE
       ${SENSABLE_INCLUDE_DIR}
       ${sawSensablePhantom_INCLUDE_DIR}
       ${sawControllers_INCLUDE_DIR})
