@@ -5,7 +5,7 @@
   Author(s):  Anton Deguet
   Created on: 2014-07-21
 
-  (C) Copyright 2014-2020 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2014-2023 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -59,7 +59,8 @@ mtsSensableHDQtWidget::mtsSensableHDQtWidget(const std::string & componentName, 
         m_device_interface->AddFunction("measured_cp", Device.measured_cp);
         m_device_interface->AddFunction("measured_cf", Device.measured_cf);
         m_device_interface->AddFunction("measured_js", Device.measured_js);
-        m_device_interface->AddFunction("servo_cf", Device.servo_cf);
+        m_device_interface->AddFunction("hold", Device.hold);
+        m_device_interface->AddFunction("free", Device.free);
         m_device_interface->AddFunction("period_statistics", Device.period_statistics);
         m_device_interface->AddFunction("get_button_names", Device.get_button_names);
     }
@@ -151,6 +152,16 @@ void mtsSensableHDQtWidget::setupUi(void)
     componentManager->AddComponent(QPBWidgetComponent);
     controlLayout->addWidget(QPBWidgetComponent);
 
+    QPushButton * holdButton = new QPushButton("Hold");
+    controlLayout->addWidget(holdButton);
+    connect(holdButton, SIGNAL(clicked()),
+            this, SLOT(SlotHold()));
+
+    QPushButton * freeButton = new QPushButton("Free");
+    controlLayout->addWidget(freeButton);
+    connect(freeButton, SIGNAL(clicked()),
+            this, SLOT(SlotFree()));
+
     controlLayout->addStretch();
 
     // system
@@ -207,4 +218,14 @@ void mtsSensableHDQtWidget::timerEvent(QTimerEvent * CMN_UNUSED(event))
 
     Device.period_statistics(IntervalStatistics);
     QMIntervalStatistics->SetValue(IntervalStatistics);
+}
+
+void mtsSensableHDQtWidget::SlotHold(void)
+{
+    Device.hold();
+}
+
+void mtsSensableHDQtWidget::SlotFree(void)
+{
+    Device.free();
 }

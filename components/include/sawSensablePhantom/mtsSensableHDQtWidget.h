@@ -5,7 +5,7 @@
   Author(s):  Anton Deguet
   Created on: 2014-07-21
 
-  (C) Copyright 2014-2020 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2014-2023 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -55,6 +55,8 @@ class CISST_EXPORT mtsSensableHDQtWidget : public QWidget, public mtsComponent
 
  private slots:
     void timerEvent(QTimerEvent * event);
+    void SlotHold(void);
+    void SlotFree(void);
 
  private:
     //! setup GUI
@@ -70,7 +72,8 @@ class CISST_EXPORT mtsSensableHDQtWidget : public QWidget, public mtsComponent
         mtsFunctionRead measured_cp;
         mtsFunctionRead measured_cf;
         mtsFunctionRead measured_js;
-        mtsFunctionWrite servo_cf;
+        mtsFunctionVoid hold;
+        mtsFunctionVoid free;
         mtsFunctionRead period_statistics;
         mtsFunctionRead get_button_names;
     } Device;

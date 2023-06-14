@@ -5,7 +5,7 @@
   Author(s): Anton Deguet
   Created on: 2008-04-04
 
-  (C) Copyright 2008-2022 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2008-2023 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -204,6 +204,12 @@ public:
         prmPositionCartesianSet setpoint;
         setpoint.Goal() = m_measured_cp.Position();
         servo_cp(setpoint);
+    }
+
+    inline void free(void) {
+        prmForceCartesianSet zeroWrench;
+        servo_cf(zeroWrench);
+        use_gravity_compensation(true);
     }
 
     inline void servo_ci(const prmCartesianImpedance & goal) {
@@ -653,6 +659,8 @@ void mtsSensableHD::SetupInterfaces(void)
                                   device, "move_cp");
         provided->AddCommandVoid(&mtsSensableHDDevice::hold,
                                  device, "hold");
+        provided->AddCommandVoid(&mtsSensableHDDevice::free,
+                                 device, "free");
         provided->AddCommandWrite(&mtsSensableHDDevice::servo_ci,
                                   device, "servo_ci");
         provided->AddCommandWrite(&mtsSensableHDDevice::use_gravity_compensation,
