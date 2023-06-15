@@ -51,7 +51,7 @@ For Linux users, we strongly recommend to compile with ROS and the python catkin
 
 Short version for Ubuntu (18.04) ROS (melodic) to compile using `catkin` and `wstool`:
 ```sh
-sudo apt install libxml2-dev libraw1394-dev libncurses5-dev qtcreator swig sox espeak cmake-curses-gui cmake-qt-gui git subversion gfortran libcppunit-dev libqt5xmlpatterns5-dev # most system dependencies we need
+sudo apt install libxml2-dev libraw1394-dev libncurses5 libncurses5-dev qtcreator swig sox espeak cmake-curses-gui cmake-qt-gui git subversion gfortran libcppunit-dev libqt5xmlpatterns5-dev # most system dependencies we need
 sudo apt install python-wstool python-catkin-tools # catkin and wstool for ROS build
 source /opt/ros/melodic/setup.bash # or use whatever version of ROS is installed!
 mkdir ~/catkin_ws # create the catkin workspace
