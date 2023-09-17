@@ -247,6 +247,7 @@ public:
 
     // joint scales and offsets
     vctDoubleVec m_joint_scales, m_joint_offsets;
+    bool m_auto_adjust_gimbal_offsets = true;
 
     // tip
     prmPositionCartesianGet m_tip_measured_cp;
@@ -299,6 +300,16 @@ void mtsSensableHD::Run(void)
             // detect changes in calibration
             bool homed = (hdCheckCalibration() == HD_CALIBRATION_OK);
             if (homed) {
+                if (device->m_auto_adjust_gimbal_offsets
+                    && (device->m_calibration_style == HD_CALIBRATION_INKWELL)) {
+                    // check the difference between measured and
+                    // expected position for the last 3 joints
+                    vctDoubleVec reference_gimbal(3);
+                    reference_gimbal.Assign(0.0, 45.0 * cmnPI_180, 0.0);
+                    vctDoubleVec difference(3);
+                    difference = reference_gimbal - device->m_measured_js.Position().Ref(3, 3);
+                    device->m_joint_offsets.Ref(3, 3) += difference;
+                }
                 device->m_interface->SendStatus(device->m_name + ": calibration complete");
                 device->m_operating_state.IsHomed() = homed;
                 device->m_operating_state_event(device->m_operating_state);
@@ -588,6 +599,8 @@ void mtsSensableHD::Configure(const std::string & filename)
                                              << ", found " << nb << " but expected 6 values" << std::endl;
                     exit(EXIT_FAILURE);
                 }
+                // turn off auto adjust to not overwrite user offsets
+                device->m_auto_adjust_gimbal_offsets = false;
             }
         } else {
             CMN_LOG_CLASS_INIT_ERROR << "Configure: no \"name\" found for device " << index << std::endl;

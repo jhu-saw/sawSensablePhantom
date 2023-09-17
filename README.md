@@ -25,7 +25,11 @@ This SAW component contains code for interfacing with the SensAble *PHANTOM Omni
   * Linux Ubuntu 16.04, 18.04 and 20.04 and Windows
   * SensAble *Phantom Omni* (FireWire/1394) and 3DS *Touch* (Ethernet) but it might work with other haptic devices from SensAble or 3DS (assuming the C API is the same)
 
-The `ros` folder contains code for a ROS node that interfaces with the sawSensablePhantom component and publishes the 3D transformations, joint positions and efforts, buttons...  It also has subscribers to control the Omni (i.e. set cartesian wrench).  To build the ROS node, make sure you use `catkin build`.
+The `ros` folder contains code for a ROS node that interfaces with the
+sawSensablePhantom component and publishes the 3D transformations,
+joint positions and efforts, buttons...  It also has subscribers to
+control the Omni (i.e. set cartesian wrench).  To build the ROS node,
+make sure you use `catkin build`.
 
 # Links
  * License: http://github.com/jhu-cisst/cisst/blob/master/license.txt
@@ -99,12 +103,17 @@ Some examples of configuration files can be found in the `share` directory.  Her
 
 ## Calibration
 
-We found that the Sensable *PHANTOM Omni* is not reporting the gimbal values the same way the Geomagic/3DS *Touch* does.  The issue might be due to lack of support for the calibration procedure in the older drivers/setup programs for the *PHANTOM Omni*.
+We found that the Sensable *PHANTOM Omni* is not reporting the gimbal
+values the same way the Geomagic/3DS *Touch* does.  The issue might be
+due to lack of support for the calibration procedure in the older
+drivers/setup programs for the *PHANTOM Omni*.
 
-So for this implementation we use the convention from the Geomagic/3DS *Touch*, i.e. the joint directions and origins are defined as follows:
+So for this implementation we use the convention from the Geomagic/3DS
+*Touch*, i.e. the joint directions and origins are defined as follows:
+
 * waist:
   * positive direction is toward left
-  * zero is when facing user, grooves in house align between base and sphere
+  * zero is when facing user, grooves in housing align between base and sphere
   * range is about -55 to 55
 * shoulder:
   * positive direction is moving link up
@@ -127,7 +136,11 @@ So for this implementation we use the convention from the Geomagic/3DS *Touch*, 
   * zero is when buttons are up
   * range is about -150 to 150
 
-We found that the older SensAble *PHANTOM Omni* didn't follow these convention for the last 3 joints (gimbal).  We haven't figured out an easy fix so we provide a way to load some scales and offsets in a custom configuration file that needs to be explicitely loaded:
+We found that the older SensAble *PHANTOM Omni* didn't follow these
+convention for the last 3 joints (gimbal).  We haven't figured out an
+easy fix so we provide a way to load some scales (and optional offsets) in a
+custom configuration file that needs to be explicitely loaded:
+
 ```json
 {
     "devices":
@@ -138,15 +151,33 @@ We found that the older SensAble *PHANTOM Omni* didn't follow these convention f
             "servo_cf_viscosity": 3.0,
             "servo_cp_p_gain": 50.0,
             "servo_cp_d_gain": 5.0,
-            "joint-scales": [1.0, 1.0, 1.0, 1.0, -1.0, 1.0],
-            "joint-offsets": [0.0, 0.0, 0.0, 3.66519, -3.80482, 3.08923]
+            "joint-scales": [1.0, 1.0, 1.0, 1.0, -1.0, 1.0]
+            // if the offsets are not provided, they will be automatically
+            // computed when the stylus is placed in the inkwell
+            // ,"joint-offsets": [0.0, 0.0, 0.0, 3.66519, -3.80482, 3.08923]
         }
     ]
 }
 ```
-To find the offsets, place the stylus in the inkwell then quit the application (we're not sure why but this is needed).  Then restart the application with stylus in the inkwell, stylus buttons on the top.  Check the reported joint angles in the GUI.  Ideally the values should be around [0, 15, -36, 0, 45, 0].  If they are not, compute the difference in degrees (**only for the last 3 values, leave the first 3 at zero**), convert to radians and update your device configuration file (see example above).  Then quit and restart the application to make sure your offsets are loaded properly.
 
-As to why this is needed, our guess is that the first 3 joints are using relative encoders that can be preloaded when the stylus is in the inkwell.  The gimbal likely uses potentiometers (they're a bit noisy and always moving) so they could be calibrated just once but unfortunately we don't have access to that API so we have to maintain our own offsets.  Also, if you have a better solution, please let us know!
+To find the offsets, place the stylus in the inkwell then quit the
+application (we're not sure why but this is needed).  Then restart the
+application with stylus in the inkwell, stylus buttons on the top.
+Check the reported joint angles in the GUI.  Ideally the values should
+be around [0, 15, -36, 0, 45, 0].  If they are not, compute the
+difference in degrees (**only for the last 3 values, leave the first 3
+at zero**), convert to radians and update your device configuration
+file (see example above).  Then quit and restart the application to
+make sure your offsets are loaded properly.
+
+
+As to why this is needed, our guess is that the first 3 joints are
+using relative encoders that can be preloaded when the stylus is in
+the inkwell.  The gimbal likely uses potentiometers (they're a bit
+noisy and always moving) so they could be calibrated just once but
+unfortunately we don't have access to that API so we have to maintain
+our own offsets.  Also, if you have a better solution, please let us
+know!
 
 With ROS, start the application with a configuration file using:
 ```sh
