@@ -19,7 +19,7 @@ set (REQUIRED_CISST_LIBRARIES
      cisstMultiTask
      cisstParameterTypes)
 
-find_package (cisst 1.1.0 REQUIRED ${REQUIRED_CISST_LIBRARIES})
+find_package (cisst 1.2.0 REQUIRED ${REQUIRED_CISST_LIBRARIES})
 
 if (cisst_FOUND_AS_REQUIRED)
 
@@ -54,7 +54,7 @@ if (cisst_FOUND_AS_REQUIRED)
   endif ()
 
   # for the cartesian impedence controller
-  find_package (sawControllers 2.0.0 REQUIRED)
+  find_package (sawControllers 2.1.0 REQUIRED)
 
   if (SENSABLE_FOUND AND sawControllers_FOUND)
 

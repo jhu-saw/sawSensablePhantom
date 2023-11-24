@@ -23,7 +23,7 @@ set (REQUIRED_CISST_LIBRARIES cisstCommon
                               cisstParameterTypes)
 
 # find cisst and make sure the required libraries have been compiled
-find_package (cisst 1.1.0 REQUIRED ${REQUIRED_CISST_LIBRARIES})
+find_package (cisst 1.2.0 REQUIRED ${REQUIRED_CISST_LIBRARIES})
 
 if (cisst_FOUND_AS_REQUIRED)
 
@@ -34,7 +34,7 @@ if (cisst_FOUND_AS_REQUIRED)
   cisst_set_output_path ()
 
   # sawSensablePhantom has been compiled within cisst, we should find it automatically
-  find_package (sawControllers 2.0.0)
+  find_package (sawControllers 2.1.0)
   find_package (sawSensablePhantom 1.0.0)
 
   if (sawSensablePhantom_FOUND AND sawControllers_FOUND AND CISST_HAS_QT)
