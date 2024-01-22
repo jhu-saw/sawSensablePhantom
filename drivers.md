@@ -69,12 +69,6 @@ We created a nifty little script to do the work: https://github.com/jhu-cisst-ex
 * Linux page with links to Open Haptics v3.4 and Touch Device Driver v2019.2.15: https://support.3dsystems.com/s/article/OpenHaptics-for-Linux-Developer-Edition-v34?language=en_US
 * Linux instructions: https://s3.amazonaws.com/dl.3dsystems.com/binaries/Sensable/Linux/Installation+Instructions.pdf
 
-### Removing the drivers
-
-Removing files:
-* To remove the 3DS provided SDK, use script `utils/uninstall-3ds-openhaptics-3.4.sh` from this repository
-* To remove the 3DS provided drivers (`2019_2_15`) use the script `utils/uninstall-3ds-touch-2019.sh` from this repository
-
 ## Configuration
 
 Use the provided `Touch_Setup` and `Touch_Diagnostic` to configure and test your device.
