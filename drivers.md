@@ -3,8 +3,14 @@
 In theory OpenHaptics should support many devices across different OSs but in practice it's not always easy to find and install the drivers for your haptic devices.  We focus primarily on Linux but the code should work on Windows as well.  On Linux, we tested a limited number of devices:
 * SensAble *PHANTOM Omni*, i.e. the original system with a FireWire interface.  Works on Ubuntu 16.04, 18.04 and 20.04.
 * Ethernet based *Touch*.  These systems have been sold under the brands *Geomagic* and *3DS*.  Works on Ubuntu 16.04, 18.04 and 20.04.
-* USB based *Touch*.  This are even more recent and we believe were all from *3DS*.  Works on Ubuntu 16.04 and 18.04.  We never got these to work on Ubuntu 20.04.  If these worked for you, let us know.
+* USB based *Touch*.  This are even more recent and we believe were all from *3DS*.  Works on Ubuntu 16.04, 18.04 and 20.04.
 * USB based Geomagic *Touch Stylus*
+
+# Short version
+
+We provide some scripts to help install/uninstall drivers:
+* FireWire: https://github.com/jhu-cisst-external/phantom-omni-1394-drivers
+* Ethernet/USB: https://github.com/jhu-cisst-external/3ds-touch-openhaptics
 
 # SensAble *PHANTOM Omni*
 
@@ -14,7 +20,7 @@ This is the original Omni and many labs have some of these collecting dust on sh
 
 If you have used the same computer with the 3DS drivers for the Ethernet based *Touch*, **remove these drivers**.  There is a couple of scripts provided in this repository to remove the drivers and OpenHaptics (in directory 'utils').
 
-The main issue with the SensAble *Omni* is that the drivers for a modern Linux are hard to find.   The vendor's version is rather old and incompatible with most recent Linux distributions.  You can find plenty of how-tos online to patch the driver installation but these tend to be incomplete.  So we created a nifty little script to do the work:  https://github.com/jhu-cisst-external/phantom-omni-1394-drivers
+The main issue with the SensAble *Omni* is that the drivers for a modern Linux are hard to find.   The vendor's version is rather old and incompatible with most recent Linux distributions.  You can find plenty of how-tos online to patch the driver installation but these tend to be incomplete.
 
 The Phantom Omni uses a FireWire port to communicate.  When connecting your device to your computer, a pseudo device will be added to the `/dev` directory.   Usually something like `/dev/fw1`, `/dev/fw2` or higher.  Using the command `dmesg -w` can help identify which device is used.  First start `dmesg -w` in a terminal, then plug your device.  You should see something like:
 ```
@@ -28,6 +34,10 @@ crw------- 1 root root    243, 0 Mar 22 14:10 /dev/fw0
 crw-rw---- 1 root plugdev 243, 1 Mar 23 18:19 /dev/fw1
 ```
 By default the drivers are configured so the OS sets the ownership of `/dev/fw1` to `root` and the group to `plugdev`.  To grant permissions to read and write to the device, use the command `sudo adduser <user_id> plugdev` to add users to the `plugdev` group.   Please note that the user has to logout/login for the new group membership to take effect.
+
+## Automated installation
+
+We created a nifty little script to do the work: :  https://github.com/jhu-cisst-external/phantom-omni-1394-drivers
 
 ## Configuration
 
