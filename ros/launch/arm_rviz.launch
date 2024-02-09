@@ -3,7 +3,7 @@
   <arg name="arm" default="arm"/>
   <arg name="model" default="$(find saw_sensable_phantom_models)/urdf/omni.urdf" />
 
-  <node name="sensable_phantom" pkg="sensable_phantom_ros" type="sensable_phantom" />
+  <node name="sensable_phantom" pkg="sensable_phantom" type="sensable_phantom" />
 
   <group ns="$(arg arm)">
       <arg name="gui" default="false" />

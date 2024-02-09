@@ -182,7 +182,7 @@ know!
 With ROS, start the application with a configuration file using:
 ```sh
 roscd saw_sensable_phantom_config
-rosrun sensable_phantom_ros sensable_phantom -j sawSensablePhantomDefault.json
+rosrun sensable_phantom sensable_phantom -j sawSensablePhantomDefault.json
 ```
 Offsets might not be the same for all older *Omnis* so make sure the reported joint angles make sense.  You can also use ROS/RViz to visualize these angles (see below).
 
@@ -190,15 +190,15 @@ Offsets might not be the same for all older *Omnis* so make sure the reported jo
 
 ### Sensable node
 
-The ROS node is `sensable_phantom` and can be found in the package `sensable_phantom_ros`.  If you only have one Omni and don't need a configuration file:
+The ROS node is `sensable_phantom` and can be found in the package `sensable_phantom`.  If you only have one Omni and don't need a configuration file:
 ```
-rosrun sensable_phantom_ros sensable_phantom
+rosrun sensable_phantom sensable_phantom
 ```
 
 If you have more than one Omni, please read the section above for the configuration file description.
 ```sh
 roscd sensable_phantom_config
-rosrun sensable_phantom_ros sensable_phantom -D -j sawSensablePhantomLeft.json
+rosrun sensable_phantom sensable_phantom -D -j sawSensablePhantomLeft.json
 ```
 
 The ROS node has one more command line option:
@@ -230,17 +230,17 @@ Once the node is started AND connected, the following ROS topics should appear:
 
 After you've started the `sensable_phantom` node, you can also visualize the Omni in RViz using:
 ```sh
-roslaunch sensable_phantom_ros rviz.launch
+roslaunch sensable_phantom rviz.launch
 ```
 
 If the arm has a different name (e.g. `right`), use:
 ```sh
-roslaunch sensable_phantom_ros rviz.launch arm:=right
+roslaunch sensable_phantom rviz.launch arm:=right
 ```
 
 You can also start both the sensable node and RViz using:
 ```sh
-roslaunch sensable_phantom_ros arm_rviz.launch
+roslaunch sensable_phantom arm_rviz.launch
 ```
 
 Note: urdf and models provided in this repository are based on files from https://github.com/fsuarez6/phantom_omni

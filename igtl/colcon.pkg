@@ -1,0 +1,4 @@
+{
+  "name": "sawSensablePhantomIGTL",
+  "dependencies": ["cisst", "sawControllersCore", "sawOpenIGTLink", "sawSensablePhantomCore"]
+}

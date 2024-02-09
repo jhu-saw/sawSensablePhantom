@@ -1,9 +1,7 @@
 <package>
   <name>saw_sensable_phantom_examples</name>
-  <version>1.0.0</version>
-  <description>
-  sawSensablePhantom Examples
-  </description>
+  <version>1.1.0</version>
+  <description>sawSensablePhantom Examples</description>
   <maintainer email="anton.deguet@jhu.edu">Anton Deguet</maintainer>
   <license>cisst</license>
   <url>https://github.com/jhu-saw/sawSensablePhantom</url>

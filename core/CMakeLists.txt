@@ -1,5 +1,5 @@
 #
-# (C) Copyright 2011-2022 Johns Hopkins University (JHU), All Rights Reserved.
+# (C) Copyright 2011-2024 Johns Hopkins University (JHU), All Rights Reserved.
 #
 # --- begin cisst license - do not edit ---
 #
@@ -10,7 +10,7 @@
 # --- end cisst license ---
 
 cmake_minimum_required(VERSION 3.10)
-project (sawSensablePhantomAll VERSION 1.0.0)
+project (sawSensablePhantomCore VERSION 1.1.0)
 
 find_package (cisst REQUIRED)
 include (${CISST_USE_FILE})
@@ -21,9 +21,8 @@ cisst_cpack_settings (
 add_subdirectory (components)
 add_subdirectory (share)
 
-set (sawSensablePhantom_DIR "${sawSensablePhantomAll_BINARY_DIR}/components")
+set (sawSensablePhantom_DIR "${sawSensablePhantomCore_BINARY_DIR}/components")
 add_subdirectory (examples)
-add_subdirectory (igtl)
 
 include (CPack)
 cpack_add_component (sawSensablePhantom)

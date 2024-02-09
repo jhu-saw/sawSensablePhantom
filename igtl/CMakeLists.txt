@@ -1,5 +1,5 @@
 #
-# (C) Copyright 2017-2023 Johns Hopkins University (JHU), All Rights Reserved.
+# (C) Copyright 2017-2024 Johns Hopkins University (JHU), All Rights Reserved.
 #
 # --- begin cisst license - do not edit ---
 #
@@ -10,21 +10,22 @@
 # --- end cisst license ---
 
 cmake_minimum_required (VERSION 3.10)
-project (sawSensablePhantomIGTL VERSION 1.0.0)
+project (sawSensablePhantomIGTL VERSION 1.1.0)
 
 # create a list of required cisst libraries
-set (REQUIRED_CISST_LIBRARIES cisstCommon
-                              cisstCommonQt
-                              cisstVector
-                              cisstVectorQt
-                              cisstOSAbstraction
-                              cisstMultiTask
-                              cisstMultiTaskQt
-                              cisstParameterTypes
-                              cisstParameterTypesQt)
+set (REQUIRED_CISST_LIBRARIES
+  cisstCommon
+  cisstCommonQt
+  cisstVector
+  cisstVectorQt
+  cisstOSAbstraction
+  cisstMultiTask
+  cisstMultiTaskQt
+  cisstParameterTypes
+  cisstParameterTypesQt)
 
 # find cisst and make sure the required libraries have been compiled
-find_package (cisst 1.2.0 REQUIRED ${REQUIRED_CISST_LIBRARIES})
+find_package (cisst 1.2.1 REQUIRED ${REQUIRED_CISST_LIBRARIES})
 
 if (cisst_FOUND_AS_REQUIRED)
 
@@ -38,8 +39,8 @@ if (cisst_FOUND_AS_REQUIRED)
   endif ()
 
   # sawSensablePhantom has been compiled within cisst, we should find it automatically
-  find_package (sawSensablePhantom 1.0.0)
-  find_package (sawOpenIGTLink 1.2.0)
+  find_package (sawSensablePhantom 1.1.0)
+  find_package (sawOpenIGTLink 1.3.0)
 
   if (sawSensablePhantom_FOUND AND sawOpenIGTLink_FOUND AND CISST_HAS_QT)
 
@@ -52,11 +53,10 @@ if (cisst_FOUND_AS_REQUIRED)
 
     # link against non cisst libraries and saw components
     target_link_libraries (sawSensablePhantomQtIGTL
-                           ${sawSensablePhantom_LIBRARIES}
-                           ${sawSensablePhantomQt_LIBRARIES}
-                           ${sawOpenIGTLink_LIBRARIES}
-                           ${QT_LIBRARIES}
-                           )
+      ${sawSensablePhantom_LIBRARIES}
+      ${sawSensablePhantomQt_LIBRARIES}
+      ${sawOpenIGTLink_LIBRARIES}
+      ${QT_LIBRARIES})
 
     # link against cisst libraries (and dependencies)
     cisst_target_link_libraries (sawSensablePhantomQtIGTL ${REQUIRED_CISST_LIBRARIES})

@@ -1,5 +1,5 @@
 #
-# (C) Copyright 2011-2023 Johns Hopkins University (JHU), All Rights Reserved.
+# (C) Copyright 2011-2024 Johns Hopkins University (JHU), All Rights Reserved.
 #
 # --- begin cisst license - do not edit ---
 #
@@ -10,7 +10,7 @@
 # --- end cisst license ---
 
 cmake_minimum_required (VERSION 3.10)
-project (sawSensablePhantom VERSION 1.0.0)
+project (sawSensablePhantom VERSION 1.1.0)
 
 set (REQUIRED_CISST_LIBRARIES
      cisstCommon
@@ -19,7 +19,7 @@ set (REQUIRED_CISST_LIBRARIES
      cisstMultiTask
      cisstParameterTypes)
 
-find_package (cisst 1.2.0 REQUIRED ${REQUIRED_CISST_LIBRARIES})
+find_package (cisst 1.2.1 REQUIRED ${REQUIRED_CISST_LIBRARIES})
 
 if (cisst_FOUND_AS_REQUIRED)
 
@@ -98,8 +98,7 @@ if (cisst_FOUND_AS_REQUIRED)
     install (DIRECTORY
              "${sawSensablePhantom_SOURCE_DIR}/include/sawSensablePhantom"
              DESTINATION include
-             COMPONENT sawSensablePhantom-dev
-             PATTERN .svn EXCLUDE)
+             COMPONENT sawSensablePhantom-dev)
 
     install (TARGETS sawSensablePhantom COMPONENT sawSensablePhantom
              RUNTIME DESTINATION bin
