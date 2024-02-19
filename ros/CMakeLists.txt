@@ -21,7 +21,6 @@ find_package (catkin QUIET
 
 # ROS 1
 if (catkin_FOUND)
-  add_definitions (-DROS1)
   set (ROS_VERSION 1)
 else (catkin_FOUND)
 
@@ -29,11 +28,10 @@ else (catkin_FOUND)
   find_package (ament_cmake QUIET)
   if (ament_cmake_FOUND)
     find_package (ament_cmake_python REQUIRED)
-    add_definitions (-DROS2)
     set (ROS_VERSION 2)
     set (REQUIRED_AMENT_PACKAGES
       rclcpp std_msgs std_srvs geometry_msgs sensor_msgs diagnostic_msgs
-      tf2_ros tf2_msgs cisst_msgs crtk_msgs cisst_ros2_bridge cisst_ros2_crtk)
+      tf2_ros tf2_msgs cisst_msgs crtk_msgs cisst_ros_bridge cisst_ros_crtk)
     foreach (_pkg ${REQUIRED_AMENT_PACKAGES})
       find_package (${_pkg} REQUIRED)
     endforeach ()
@@ -60,7 +58,7 @@ if (cisst_FOUND_AS_REQUIRED)
 
   # load cisst configuration
   include (${CISST_USE_FILE})
-  
+
   # set paths
   cisst_set_output_path ()
 
@@ -101,7 +99,7 @@ if (cisst_FOUND_AS_REQUIRED)
       add_subdirectory (python)
       install (PROGRAMS
         scripts/xyz-motions.py
-        scripts/cartesian_impedance.py 
+        scripts/cartesian_impedance.py
         DESTINATION lib/${PROJECT_NAME})
       # C++
       ament_target_dependencies (

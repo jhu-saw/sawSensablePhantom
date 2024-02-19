@@ -24,13 +24,8 @@ http://www.cisst.org/cisst/license.txt.
 #include <sawSensablePhantom/mtsSensableHD.h>
 #include <sawSensablePhantom/mtsSensableHDQtWidget.h>
 
-#if ROS1
 #include <cisst_ros_bridge/mtsROSBridge.h>
 #include <cisst_ros_crtk/mts_ros_crtk_bridge.h>
-#elif ROS2
-#include <cisst_ros2_bridge/mtsROSBridge.h>
-#include <cisst_ros2_crtk/mts_ros_crtk_bridge.h>
-#endif
 
 #include <QApplication>
 #include <QMainWindow>
@@ -46,14 +41,8 @@ int main(int argc, char * argv[])
     cmnLogger::AddChannel(std::cerr, CMN_LOG_ALLOW_ERRORS_AND_WARNINGS);
 
     // create ROS node handle
-#if ROS1
-    ros::init(argc, argv, "sensable_phantom", ros::init_options::AnonymousName);
-    ros::NodeHandle rosNode;
-#elif ROS2
-    rclcpp::init(argc, argv);
-    auto rosNode = std::make_shared<rclcpp::Node>("sensable_phantom");
-#endif
-
+    cisst_ral::ral ral(argc, argv, "sensable_phantom");
+    auto rosNode = ral.node();
 
     // parse options
     cmnCommandLineOptions options;
@@ -95,13 +84,8 @@ int main(int argc, char * argv[])
     componentManager->AddComponent(devices);
 
     // ROS CRTK bridge
-#if ROS1
     mts_ros_crtk_bridge_provided * crtk_bridge
-        = new mts_ros_crtk_bridge_provided("sensable_phantom_crtk_bridge", &rosNode);
-#elif ROS2
-    mts_ros_crtk_bridge * crtk_bridge
-        = new mts_ros_crtk_bridge("sensable_phantom_crtk_bridge", rosNode);
-#endif
+        = new mts_ros_crtk_bridge_provided("sensable_phantom_crtk_bridge", rosNode);
     componentManager->AddComponent(crtk_bridge);
 
     // create a Qt user interface
@@ -151,11 +135,7 @@ int main(int argc, char * argv[])
     cmnLogger::Kill();
 
     // stop ROS node
-#if ROS1
-    ros::shutdown();
-#elif ROS2
-    rclcpp::shutdown();
-#endif
+    cisst_ral::shutdown();
 
     // kill all components and perform cleanup
     componentManager->KillAllAndWait(5.0 * cmn_s);
