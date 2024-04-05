@@ -1,14 +1,21 @@
 <?xml version="1.0"?>
-<package>
-  <name>saw_sensable_phantom_models</name>
+<package format="3">
+  <name>sensable_phantom_models</name>
   <description>The omni_description package</description>
 
   <version>1.0.0</version>
   <maintainer email="anton.deguet@jhu.edu">Anton Deguet</maintainer>
   <license>BSD</license>
 
-  <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>urdf</build_depend>
-  <run_depend>urdf</run_depend>
+  <buildtool_depend condition="$ROS_VERSION == 1">catkin</buildtool_depend>
+  <buildtool_depend condition="$ROS_VERSION == 2">ament_cmake</buildtool_depend>
 
+  <exec_depend>joint_state_publisher</exec_depend>
+  <exec_depend>robot_state_publisher</exec_depend>
+  <exec_depend>rviz</exec_depend>
+
+  <!-- The export tag contains other, unspecified, tags -->
+  <export>
+    <build_type condition="$ROS_VERSION == 2">ament_cmake</build_type>
+  </export>
 </package>

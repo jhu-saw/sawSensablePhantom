@@ -14,13 +14,15 @@ def generate_launch_description():
     # urdf config
     urdf_file_name = 'omni.urdf'
     urdf = os.path.join(
-        get_package_share_directory('sensable_omni_model'),
+        get_package_share_directory('sensable_phantom_models'),
+        'urdf',
         urdf_file_name)
 
     # rviz config
     rviz_file_name = 'omni.rviz'
     rviz = os.path.join(
-        get_package_share_directory('sensable_omni_model'),
+        get_package_share_directory('sensable_phantom_models'),
+        'rviz',
         rviz_file_name)
 
     # sensable config

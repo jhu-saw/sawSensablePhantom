@@ -307,8 +307,9 @@ void mtsSensableHD::Run(void)
                     vctDoubleVec reference_gimbal(3);
                     reference_gimbal.Assign(0.0, 45.0 * cmnPI_180, 0.0);
                     vctDoubleVec difference(3);
-                    difference = reference_gimbal - device->m_measured_js.Position().Ref(3, 3);
-                    device->m_joint_offsets.Ref(3, 3) += difference;
+                    difference = reference_gimbal + device->m_measured_js.Position().Ref(3, 3);
+                    device->m_joint_offsets.Ref(3, 3) = difference;
+                    device->m_joint_scales.Ref(2, 3) = -1.0; // change direction for joints 4 and 5
                 }
                 device->m_interface->SendStatus(device->m_name + ": calibration complete");
                 device->m_operating_state.IsHomed() = homed;

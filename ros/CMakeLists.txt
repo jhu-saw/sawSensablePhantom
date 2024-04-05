@@ -95,8 +95,10 @@ if (cisst_FOUND_AS_REQUIRED)
       INCLUDES DESTINATION include)
 
     if (ROS_VERSION EQUAL 2)
+
       # Python
       add_subdirectory (python)
+
       install (PROGRAMS
         scripts/xyz-motions.py
         scripts/cartesian_impedance.py

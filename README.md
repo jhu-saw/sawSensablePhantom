@@ -219,12 +219,12 @@ roslaunch sensable_phantom rviz.launch
 
 If the arm has a different name (e.g. `right`), use:
 ```sh
-roslaunch sensable_phantom rviz.launch arm:=right
+roslaunch sensable_phantom rviz.launch name:=right
 ```
 
 You can also start both the sensable node and RViz using:
 ```sh
-roslaunch sensable_phantom arm_rviz.launch
+roslaunch sensable_phantom omni_rviz.launch
 ```
 
 Note: urdf and models provided in this repository are based on files from https://github.com/fsuarez6/phantom_omni
