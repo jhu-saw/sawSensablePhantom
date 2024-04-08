@@ -233,6 +233,7 @@ public:
     mtsInterfaceProvided * m_interface = nullptr;
     osaCartesianImpedanceController * m_cartesian_impedance_controller = nullptr;
     bool m_device_available;
+    size_t counter = 0;
 
     // local copy of the buttons state as defined by Sensable
     int m_buttons;
@@ -247,7 +248,7 @@ public:
 
     // joint scales and offsets
     vctDoubleVec m_joint_scales, m_joint_offsets;
-    bool m_auto_adjust_gimbal_offsets = true;
+    bool m_auto_adjust_gimbal_offsets = false;
 
     // tip
     prmPositionCartesianGet m_tip_measured_cp;
@@ -288,50 +289,12 @@ void mtsSensableHD::Run(void)
         current_buttons = 0;
         device = m_devices.at(index);
         handle = m_handles.at(index);
+        device->counter++;
         // begin haptics frame
         hHD = handle->m_device_handle;
         hdMakeCurrentDevice(hHD);
 
         hdBeginFrame(hHD);
-
-        // check calibration if not homed
-        if (!device->m_operating_state.IsHomed()) {
-
-            // detect changes in calibration
-            bool homed = (hdCheckCalibration() == HD_CALIBRATION_OK);
-            if (homed) {
-                if (device->m_auto_adjust_gimbal_offsets
-                    && (device->m_calibration_style == HD_CALIBRATION_INKWELL)) {
-                    // check the difference between measured and
-                    // expected position for the last 3 joints
-                    vctDoubleVec reference_gimbal(3);
-                    reference_gimbal.Assign(0.0, 45.0 * cmnPI_180, 0.0);
-                    vctDoubleVec difference(3);
-                    difference = reference_gimbal + device->m_measured_js.Position().Ref(3, 3);
-                    device->m_joint_offsets.Ref(3, 3) = difference;
-                    device->m_joint_scales.Ref(2, 3) = -1.0; // change direction for joints 4 and 5
-                }
-                device->m_interface->SendStatus(device->m_name + ": calibration complete");
-                device->m_operating_state.IsHomed() = homed;
-                device->m_operating_state_event(device->m_operating_state);
-                device->m_cp_mode = false;
-                device->m_cf_mode = false;
-                device->m_ci_mode = false;
-                hdEnable(HD_FORCE_OUTPUT);
-            } else {
-                hdUpdateCalibration(device->m_calibration_style);
-                if (HD_DEVICE_ERROR(error = hdGetError())) {
-                    device->m_interface->SendError(device->m_name + ": calibration failed " + hdGetErrorString(error.errorCode));
-                }
-                // send message every 30 seconds
-                const double now = this->StateTable.GetTic();
-                if ((now - device->m_time_last_calibration_message) > 30.0 * cmn_s) {
-                    // record time
-                    device->m_time_last_calibration_message = now;
-                    device->m_interface->SendWarning(device->m_name + ": calibration required");
-                }
-            }
-        }
 
         // get the current cartesian position of the device
         hdGetDoublev(HD_CURRENT_TRANSFORM, device->Frame4x4.Pointer());
@@ -391,6 +354,37 @@ void mtsSensableHD::Run(void)
                 force.Multiply(device->m_max_force / forceNorm);
             }
             hdSetDoublev(HD_CURRENT_FORCE, force.Pointer());
+        }
+
+        // check calibration if not homed
+        if (!device->m_operating_state.IsHomed() && device->counter > 100) {
+            // detect changes in calibration
+            bool homed = (hdCheckCalibration() == HD_CALIBRATION_OK);
+            if (homed) {
+                device->m_interface->SendStatus(device->m_name + ": calibration complete");
+                device->m_operating_state.IsHomed() = homed;
+                device->m_operating_state_event(device->m_operating_state);
+                device->m_cp_mode = false;
+                device->m_cf_mode = false;
+                device->m_ci_mode = false;
+                hdEnable(HD_FORCE_OUTPUT);
+            } else {
+                // send message every 30 seconds
+                const double now = this->StateTable.GetTic();
+                bool sendMessage = false;
+                if ((now - device->m_time_last_calibration_message) > 10.0 * cmn_s) {
+                    device->m_time_last_calibration_message = now;
+                    device->m_interface->SendWarning(device->m_name + ": calibration required");
+                    sendMessage = true;
+                }
+
+                hdUpdateCalibration(device->m_calibration_style);
+                if (HD_DEVICE_ERROR(error = hdGetError())) {
+                    if (sendMessage) {
+                        device->m_interface->SendError(device->m_name + ": calibration failed " + hdGetErrorString(error.errorCode));
+                    }
+                }
+            }
         }
 
         // end haptics frame
