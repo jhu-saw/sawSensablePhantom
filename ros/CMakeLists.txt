@@ -97,7 +97,8 @@ if (cisst_FOUND_AS_REQUIRED)
     if (ROS_VERSION EQUAL 2)
 
       # Python
-      add_subdirectory (python)
+      ament_python_install_package (sensable_phantom
+	PACKAGE_DIR ${sensable_phantom_SOURCE_DIR}/python/sensable_phantom)
 
       install (PROGRAMS
         scripts/xyz-motions.py
