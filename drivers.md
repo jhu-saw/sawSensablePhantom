@@ -1,9 +1,9 @@
 # Introduction
 
 In theory OpenHaptics should support many devices across different OSs but in practice it's not always easy to find and install the drivers for your haptic devices.  We focus primarily on Linux but the code should work on Windows as well.  On Linux, we tested a limited number of devices:
-* SensAble *PHANTOM Omni*, i.e. the original system with a FireWire interface.  Works on Ubuntu 16.04, 18.04 and 20.04.
+* SensAble *PHANTOM Omni*, i.e. the original system with a FireWire interface.  Works on Ubuntu 16.04, 18.04, 20.04 and 22.04.
 * Ethernet based *Touch*.  These systems have been sold under the brands *Geomagic* and *3DS*.  Works on Ubuntu 16.04, 18.04 and 20.04.
-* USB based *Touch*.  This are even more recent and we believe were all from *3DS*.  Works on Ubuntu 16.04, 18.04 and 20.04.
+* USB based *Touch*.  These are even more recent and we believe were all from *3DS*.  Works on Ubuntu 16.04, 18.04 and 20.04.
 * USB based Geomagic *Touch Stylus*
 
 # Short version
