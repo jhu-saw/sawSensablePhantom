@@ -18,11 +18,6 @@ else (catkin_FOUND)
         DESTINATION share/${PROJECT_NAME})
     endforeach ()
 
-    # launch files require renaming
-    # install (DIRECTORY
-    #   launch-ros2/
-    #   DESTINATION share/${PROJECT_NAME}/launch)
-
     ament_package ()
   endif (ament_cmake_FOUND)
 
