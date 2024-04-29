@@ -103,7 +103,7 @@ public:
 
         m_configuration_js.Name() = m_measured_js.Name();
         m_configuration_js.Type().SetSize(NB_JOINTS);
-        m_configuration_js.Type().SetAll(PRM_JOINT_REVOLUTE);
+        m_configuration_js.Type().SetAll(CMN_JOINT_REVOLUTE);
         m_configuration_js.Valid() = true;
 
         m_measured_cp.SetReferenceFrame("base");
