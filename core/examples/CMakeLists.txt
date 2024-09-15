@@ -47,7 +47,7 @@ if (cisst_FOUND_AS_REQUIRED)
 
     add_executable (sawSensablePhantomQtExample main.cpp)
     set_target_properties (sawSensablePhantomQtExample PROPERTIES
-      COMPONENT sawSensablePhantomQt-Examples
+      COMPONENT sawSensablePhantom-Examples
       FOLDER "sawSensablePhantom")
 
     # link against non cisst libraries and saw components
