@@ -22,7 +22,7 @@
 # sawSensablePhantom
 
 This SAW component contains code for interfacing with the SensAble *PHANTOM Omni* and the Geomagic/3DS *Touch*.  It compiles on Windows and Linux.  It has been tested with:
-  * Linux Ubuntu 16.04, 18.04 and 20.04 and Windows
+  * Linux Ubuntu 18.04 to 24.04 and Windows
   * SensAble *Phantom Omni* (FireWire/1394) and 3DS *Touch* (Ethernet) but it might work with other haptic devices from SensAble or 3DS (assuming the C API is the same)
 
 The `ros` folder contains code for a ROS node that interfaces with the
@@ -39,7 +39,7 @@ make sure you use `catkin build`.
  * cisst libraries: https://github.com/jhu-cisst/cisst
  * Sensable SDK and drivers, see below
  * Qt for user interface
- * ROS (optional)
+ * ROS (optional, ROS 1 or ROS 2)
 
 # Running the examples
 
