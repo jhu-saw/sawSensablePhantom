@@ -89,7 +89,7 @@ public:
 
         Frame4x4TranslationRef.SetRef(Frame4x4.Column(3), 0);
         Frame4x4RotationRef.SetRef(Frame4x4, 0, 0);
-        m_measured_js.Name().SetSize(NB_JOINTS);
+        m_measured_js.Name().resize(NB_JOINTS);
         m_measured_js.Name().at(0) = "waist";
         m_measured_js.Name().at(1) = "shoulder";
         m_measured_js.Name().at(2) = "elbow";
