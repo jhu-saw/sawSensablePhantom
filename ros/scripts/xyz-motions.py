@@ -52,12 +52,8 @@ class example_application:
     def xyz_motion(self):
         print('starting xyz motion')
         # create a new goal starting with current position
-        initial_cartesian_position = PyKDL.Frame()
-        initial_cartesian_position.p = self.arm.measured_cp().p
-        initial_cartesian_position.M = self.arm.measured_cp().M
-        goal = PyKDL.Frame()
-        goal.p = self.arm.measured_cp().p
-        goal.M = self.arm.measured_cp().M
+        initial_cartesian_position, _ = self.arm.measured_cp()
+        goal, _ = self.arm.measured_cp()
         # motion parameters
         amplitude = 0.02 # 4 cm total
         duration = 3  # 3 seconds

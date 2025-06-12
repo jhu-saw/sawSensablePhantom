@@ -226,8 +226,8 @@ public:
 
     inline void get_button_names(std::list<std::string> & placeholder) const {
         placeholder.clear();
-        placeholder.push_back(m_name + "Button1");
-        placeholder.push_back(m_name + "Button2");
+        placeholder.push_back(m_name + "/front/Button");
+        placeholder.push_back(m_name + "/back/Button");
     }
 
     mtsInterfaceProvided * m_interface = nullptr;
@@ -703,10 +703,10 @@ void mtsSensableHD::SetupInterfaces(void)
                                  device, "get_button_names");
 
         // Add interfaces for button with events
-        provided = this->AddInterfaceProvided(device->m_name + "Button1");
+        provided = this->AddInterfaceProvided(device->m_name + "/front");
         provided->AddEventWrite(device->m_button1_event, "Button",
                                 prmEventButton());
-        provided = this->AddInterfaceProvided(device->m_name + "Button2");
+        provided = this->AddInterfaceProvided(device->m_name + "/back");
         provided->AddEventWrite(device->m_button2_event, "Button",
                                 prmEventButton());
 

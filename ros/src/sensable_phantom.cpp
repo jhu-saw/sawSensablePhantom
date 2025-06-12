@@ -112,9 +112,9 @@ int main(int argc, char * argv[])
         componentManager->Connect(deviceWidget->GetName(), "Device",
                                   devices->GetName(), name);
         tabWidget->addTab(deviceWidget, name.c_str());
-        crtk_bridge->bridge_interface_provided(devices->GetName(),
-                                               name, rosPeriod, tfPeriod);
     }
+    crtk_bridge->bridge_all_interfaces_provided(devices->GetName(),
+                                                "/sensable", rosPeriod, tfPeriod);
     crtk_bridge->Connect();
 
     // custom user components
