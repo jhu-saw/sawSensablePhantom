@@ -114,7 +114,7 @@ int main(int argc, char * argv[])
         tabWidget->addTab(deviceWidget, name.c_str());
     }
     crtk_bridge->bridge_all_interfaces_provided(devices->GetName(),
-                                                "/sensable", rosPeriod, tfPeriod);
+                                                "", rosPeriod, tfPeriod);
     crtk_bridge->Connect();
 
     // custom user components
