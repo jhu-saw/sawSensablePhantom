@@ -5,7 +5,7 @@
   Author(s):  Anton Deguet
   Created on: 2017-03-21
 
-  (C) Copyright 2017-2020 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2017-2024 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -24,6 +24,7 @@ http://www.cisst.org/cisst/license.txt.
 #include <sawSensablePhantom/mtsSensableHD.h>
 #include <sawSensablePhantom/mtsSensableHDQtWidget.h>
 
+#include <cisst_ros_bridge/mtsROSBridge.h>
 #include <cisst_ros_crtk/mts_ros_crtk_bridge.h>
 
 #include <QApplication>
@@ -40,8 +41,8 @@ int main(int argc, char * argv[])
     cmnLogger::AddChannel(std::cerr, CMN_LOG_ALLOW_ERRORS_AND_WARNINGS);
 
     // create ROS node handle
-    ros::init(argc, argv, "sensable_phantom", ros::init_options::AnonymousName);
-    ros::NodeHandle rosNodeHandle;
+    cisst_ral::ral ral(argc, argv, "sensable_phantom");
+    auto rosNode = ral.node();
 
     // parse options
     cmnCommandLineOptions options;
@@ -67,9 +68,7 @@ int main(int argc, char * argv[])
 
     // check that all required options have been provided
     std::string errorMessage;
-    if (!options.Parse(argc, argv, errorMessage)) {
-        std::cerr << "Error: " << errorMessage << std::endl;
-        options.PrintUsage(std::cerr);
+    if (!options.Parse(argc, argv, std::cerr)) {
         return -1;
     }
     std::string arguments;
@@ -85,8 +84,8 @@ int main(int argc, char * argv[])
     componentManager->AddComponent(devices);
 
     // ROS CRTK bridge
-    mts_ros_crtk_bridge * crtk_bridge
-        = new mts_ros_crtk_bridge("sensable_phantom_crtk_bridge", &rosNodeHandle);
+    mts_ros_crtk_bridge_provided * crtk_bridge
+        = new mts_ros_crtk_bridge_provided("sensable_phantom_crtk_bridge", rosNode);
     componentManager->AddComponent(crtk_bridge);
 
     // create a Qt user interface
@@ -113,9 +112,9 @@ int main(int argc, char * argv[])
         componentManager->Connect(deviceWidget->GetName(), "Device",
                                   devices->GetName(), name);
         tabWidget->addTab(deviceWidget, name.c_str());
-        crtk_bridge->bridge_interface_provided(devices->GetName(),
-                                               name, rosPeriod, tfPeriod);
     }
+    crtk_bridge->bridge_all_interfaces_provided(devices->GetName(),
+                                                "", rosPeriod, tfPeriod);
     crtk_bridge->Connect();
 
     // custom user components
@@ -132,14 +131,15 @@ int main(int argc, char * argv[])
     tabWidget->show();
     application.exec();
 
-    // kill all components and perform cleanup
-    componentManager->KillAllAndWait(5.0 * cmn_s);
-    componentManager->Cleanup();
-
+    // stop all logs
     cmnLogger::Kill();
 
     // stop ROS node
-    ros::shutdown();
+    cisst_ral::shutdown();
+
+    // kill all components and perform cleanup
+    componentManager->KillAllAndWait(5.0 * cmn_s);
+    componentManager->Cleanup();
 
     return 0;
 }

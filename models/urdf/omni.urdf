@@ -2,14 +2,11 @@
 <robot name="phantom_omni" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
   <!-- Materials -->
-  <material name="metal_seamed">
-    <color rgba="0.4627450980392157 0.4666666666666667 0.4509803921568628 1.0" />
+  <material name="light_grey">
+    <color rgba="0.9 0.9 0.9 1.0" />
   </material>
-  <material name="blue">
-    <color rgba="0.0 0.0 0.8 1.0" />
-  </material>
-  <material name="white">
-    <color rgba="1.0 1.0 1.0 1.0" />
+  <material name="dark_grey">
+    <color rgba="0.5 0.5 0.5 1.0" />
   </material>
 
   <!-- Links -->
@@ -17,63 +14,63 @@
     <visual>
       <origin xyz="0 -0.02 0" />
       <geometry>
-	<mesh filename="package://saw_sensable_phantom_models/meshes/base.stl" />
+	<mesh filename="package://sensable_phantom_models/meshes/base.stl" />
       </geometry>
-      <material name="metal_seamed"/>
+      <material name="dark_grey"/>
     </visual>
   </link>
   <link name="torso" >
     <visual>
       <origin xyz="0 0 0.036" rpy="-1.5707 0 0"/>
       <geometry>
-	<mesh filename="package://saw_sensable_phantom_models/meshes/torso.stl" />
+	<mesh filename="package://sensable_phantom_models/meshes/torso.stl" />
       </geometry>
-      <material name="blue"/>
+      <material name="light_grey"/>
     </visual>
   </link>
   <link name="upper_arm" >
     <visual>
       <origin xyz="0.0075 0 0" rpy="0 0 0"/>
       <geometry>
-	<mesh filename="package://saw_sensable_phantom_models/meshes/upper_arm.stl" />
+	<mesh filename="package://sensable_phantom_models/meshes/upper_arm.stl" />
       </geometry>
-      <material name="metal_seamed" />
+      <material name="dark_grey" />
     </visual>
   </link>
   <link name="lower_arm" >
     <visual>
       <origin xyz="0 0 0" rpy="1.5707 0 0"/>
       <geometry>
-	<mesh filename="package://saw_sensable_phantom_models/meshes/lower_arm.stl" />
+	<mesh filename="package://sensable_phantom_models/meshes/lower_arm.stl" />
       </geometry>
-      <material name="metal_seamed" />
+      <material name="light_grey" />
     </visual>
   </link>
   <link name="wrist" >
     <visual>
       <origin xyz="0 0 0" rpy="3.14159 0 0"/>
       <geometry>
-	<mesh filename="package://saw_sensable_phantom_models/meshes/wrist.stl" />
+	<mesh filename="package://sensable_phantom_models/meshes/wrist.stl" />
       </geometry>
-      <material name="metal_seamed" />
+      <material name="dark_grey" />
     </visual>
   </link>
   <link name="tip" >
     <visual>
       <origin xyz="0 0 0" rpy="-1.5707 0 0"/>
       <geometry>
-	<mesh filename="package://saw_sensable_phantom_models/meshes/tip.stl" />
+	<mesh filename="package://sensable_phantom_models/meshes/tip.stl" />
       </geometry>
-      <material name="metal_seamed" />
+      <material name="light_grey" />
     </visual>
   </link>
   <link name="stylus" >
     <visual>
       <origin xyz="0 -0.039 0" rpy="1.5707 1.5707 0"/>
       <geometry>
-	<mesh filename="package://saw_sensable_phantom_models/meshes/pen.stl" />
+	<mesh filename="package://sensable_phantom_models/meshes/stylus.stl" />
       </geometry>
-      <material name="blue" />
+      <material name="dark_grey" />
     </visual>
   </link>
 
@@ -110,7 +107,7 @@
   <joint name="pitch" type="revolute" >
     <parent link="wrist" />
     <child link="tip" />
-    <origin xyz="0 0.0525 0" rpy="1.5708 0 0" />
+    <origin xyz="0 0.0525 0" rpy="1.5707 0 0" />
     <axis xyz="1 0 0" />
     <limit lower="-0.5" upper="1.75" velocity="100" effort="5" />
   </joint>

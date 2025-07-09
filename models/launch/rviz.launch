@@ -1,0 +1,27 @@
+<launch>
+
+  <arg name="name" default="arm"/>
+  <arg name="model" default="omni" />
+
+  <group ns="$(arg name)">
+    <arg name="gui" default="false" />
+    <arg name="rate" default="20" />
+
+    <param name="robot_description"
+           command="rosrun xacro xacro $(find sensable_phantom_models)/urdf/$(arg model).urdf prefix:=$(arg name)_"/>
+    <param name="use_gui" value="$(arg gui)"/>
+    <param name="rate" value="$(arg rate)"/>
+
+    <rosparam param="source_list" subst_value="True">
+      [/$(arg name)/measured_js]
+    </rosparam>
+
+    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+
+    <node name="rviz" pkg="rviz" type="rviz"
+	  args="-d $(find sensable_phantom_models)/rviz/$(arg model).rviz" />
+
+  </group>
+
+</launch>
