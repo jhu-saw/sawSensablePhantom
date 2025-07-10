@@ -1,24 +1,3 @@
-<!--ts-->
-   * [sawSensablePhantom](#sawsensablephantom)
-   * [Links](#links)
-   * [Dependencies](#dependencies)
-   * [Running the examples](#running-the-examples)
-      * [Drivers](#drivers)
-      * [Compilation](#compilation)
-      * [Main example](#main-example)
-      * [Calibration](#calibration)
-      * [ROS](#ros)
-         * [Sensable node](#sensable-node)
-         * [RViz](#rviz)
-         * [Python client](#python-client)
-      * [OpenIGTLink (aka igtl)](#openigtlink-aka-igtl)
-         * [Dynamic loading](#dynamic-loading)
-         * [Testing with <em>pyigtl</em>](#testing-with-pyigtl)
-
-<!-- Added by: anton, at: 2021-03-05T11:48-05:00 -->
-
-<!--te-->
-
 # sawSensablePhantom
 
 This SAW component contains code for interfacing with the SensAble *PHANTOM Omni* and the Geomagic/3DS *Touch*.  It compiles on Windows and Linux.  It has been tested with:
@@ -32,7 +11,7 @@ control the Omni (i.e. set cartesian wrench).  To build the ROS node,
 make sure you use `catkin build`.
 
 # Links
- * License: http://github.com/jhu-cisst/cisst/blob/master/license.txt
+ * License: http://github.com/jhu-cisst/cisst/blob/main/license.txt
  * JHU-LCSR software: http://jhu-lcsr.github.io/software/
 
 # Dependencies
@@ -85,91 +64,6 @@ Some examples of configuration files can be found in the `share` directory.  Her
 }
 ```
 
-## Calibration
-
-We found that the Sensable *PHANTOM Omni* is not reporting the gimbal
-values the same way the Geomagic/3DS *Touch* does.  The issue might be
-due to lack of support for the calibration procedure in the older
-drivers/setup programs for the *PHANTOM Omni*.
-
-So for this implementation we use the convention from the Geomagic/3DS
-*Touch*, i.e. the joint directions and origins are defined as follows:
-
-* waist:
-  * positive direction is toward left
-  * zero is when facing user, grooves in housing align between base and sphere
-  * range is about -55 to 55
-* shoulder:
-  * positive direction is moving link up
-  * zero is when link is horinzontal
-  * range is about 0 to 100
-* elbow:
-  * positive direction is moving link up
-  * zero is when link is orthogonal to previous link
-  * range is about -45 to 70
-* yaw:
-  * positive direction is when rotating stylus to the right
-  * zero is when stylus handle is towards user, grooves in housing align between wish-bone shaped link and arm
-  * range is about -145 to 145
-* pitch:
-  * positive direction is when handle is lifted, tip going down
-  * zero is when stylus is orthogonal to wish-bone link
-  * range is about -80 to 55
-* roll
-  * position direction is when rolling to the right
-  * zero is when buttons are up
-  * range is about -150 to 150
-
-We found that the older SensAble *PHANTOM Omni* didn't follow these
-convention for the last 3 joints (gimbal).  We haven't figured out an
-easy fix so we provide a way to load some scales (and optional offsets) in a
-custom configuration file that needs to be explicitely loaded:
-
-```json
-{
-    "devices":
-    [
-        {
-            "name": "Default PHANToM",  // name defined in driver/setup
-            "rename": "arm",  // name from there on (optional), used for interfaces (GUI/ROS/IGTL)
-            "servo_cf_viscosity": 3.0,
-            "servo_cp_p_gain": 50.0,
-            "servo_cp_d_gain": 5.0,
-            "joint-scales": [1.0, 1.0, 1.0, 1.0, -1.0, 1.0]
-            // if the offsets are not provided, they will be automatically
-            // computed when the stylus is placed in the inkwell
-            // ,"joint-offsets": [0.0, 0.0, 0.0, 3.66519, -3.80482, 3.08923]
-        }
-    ]
-}
-```
-
-To find the offsets, place the stylus in the inkwell then quit the
-application (we're not sure why but this is needed).  Then restart the
-application with stylus in the inkwell, stylus buttons on the top.
-Check the reported joint angles in the GUI.  Ideally the values should
-be around [0, 15, -36, 0, 45, 0].  If they are not, compute the
-difference in degrees (**only for the last 3 values, leave the first 3
-at zero**), convert to radians and update your device configuration
-file (see example above).  Then quit and restart the application to
-make sure your offsets are loaded properly.
-
-
-As to why this is needed, our guess is that the first 3 joints are
-using relative encoders that can be preloaded when the stylus is in
-the inkwell.  The gimbal likely uses potentiometers (they're a bit
-noisy and always moving) so they could be calibrated just once but
-unfortunately we don't have access to that API so we have to maintain
-our own offsets.  Also, if you have a better solution, please let us
-know!
-
-With ROS, start the application with a configuration file using:
-```sh
-roscd saw_sensable_phantom_config
-rosrun sensable_phantom sensable_phantom -j sawSensablePhantomDefault.json
-```
-Offsets might not be the same for all older *Omnis* so make sure the reported joint angles make sense.  You can also use ROS/RViz to visualize these angles (see below).
-
 ## ROS
 
 ### Sensable node
@@ -182,12 +76,12 @@ rosrun sensable_phantom sensable_phantom
 If you have more than one Omni, please read the section above for the configuration file description.
 ```sh
 roscd sensable_phantom_config
-rosrun sensable_phantom sensable_phantom -D -j sawSensablePhantomLeft.json
+rosrun sensable_phantom sensable_phantom -D 
 ```
 
 The ROS node has one more command line option:
 ```sh
- -j <value>, --json-config <value> : json configuration file (required)
+ -j <value>, --json-config <value> : json configuration file (optional)
  -p <value>, --ros-period <value> : period in seconds to read all tool positions (default 0.002, 2 ms, 500Hz).  There is no point to have a period higher than the device (optional)
  -m, --component-manager : JSON files to configure component manager (optional)
  -D, --dark-mode : replaces the default Qt palette with darker colors (optional)
