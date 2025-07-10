@@ -226,8 +226,8 @@ public:
 
     inline void get_button_names(std::list<std::string> & placeholder) const {
         placeholder.clear();
-        placeholder.push_back(m_name + "/front/Button");
-        placeholder.push_back(m_name + "/back/Button");
+        placeholder.push_back(m_name + "/front");
+        placeholder.push_back(m_name + "/back");
     }
 
     mtsInterfaceProvided * m_interface = nullptr;
