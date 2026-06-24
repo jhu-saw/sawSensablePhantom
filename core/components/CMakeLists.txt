@@ -1,5 +1,5 @@
 #
-# (C) Copyright 2011-2024 Johns Hopkins University (JHU), All Rights Reserved.
+# (C) Copyright 2011-2026 Johns Hopkins University (JHU), All Rights Reserved.
 #
 # --- begin cisst license - do not edit ---
 #
@@ -13,18 +13,15 @@ cmake_minimum_required (VERSION 3.10)
 project (sawSensablePhantom VERSION 1.1.0)
 
 set (REQUIRED_CISST_LIBRARIES
-     cisstCommon
-     cisstVector
-     cisstOSAbstraction
-     cisstMultiTask
-     cisstParameterTypes)
+  cisstCommon
+  cisstVector
+  cisstOSAbstraction
+  cisstMultiTask
+  cisstParameterTypes)
 
-find_package (cisst 1.2.1 REQUIRED ${REQUIRED_CISST_LIBRARIES})
+find_package (cisst 1.2.1 REQUIRED COMPONENTS ${REQUIRED_CISST_LIBRARIES})
 
-if (cisst_FOUND_AS_REQUIRED)
-
-  # load cisst configuration
-  include (${CISST_USE_FILE})
+if (cisst_FOUND)
 
   # make sure CISST_USE_SI_UNITS is defined and set to 1
   if (NOT DEFINED CISST_USE_SI_UNITS)
@@ -84,31 +81,37 @@ if (cisst_FOUND_AS_REQUIRED)
     cisst_add_config_files (sawSensablePhantom)
 
     add_library (sawSensablePhantom ${IS_SHARED}
-                 ${sawSensablePhantom_HEADER_DIR}/sawSensablePhantomExport.h
-                 ${sawSensablePhantom_HEADER_DIR}/mtsSensableHD.h
-                 code/mtsSensableHD.cpp
-                 )
-    set_target_properties (sawSensablePhantom PROPERTIES
-                           VERSION ${sawSensablePhantom_VERSION}
-                           FOLDER "sawSensablePhantom")
-    target_link_libraries (sawSensablePhantom ${SENSABLE_LIBRARIES} ${sawControllers_LIBRARIES})
-    cisst_target_link_libraries (sawSensablePhantom ${REQUIRED_CISST_LIBRARIES})
+      ${sawSensablePhantom_HEADER_DIR}/sawSensablePhantomExport.h
+      ${sawSensablePhantom_HEADER_DIR}/mtsSensableHD.h
+      code/mtsSensableHD.cpp
+    )
+
+    set_target_properties (
+      sawSensablePhantom PROPERTIES
+      VERSION ${sawSensablePhantom_VERSION}
+      FOLDER "sawSensablePhantom")
+
+    target_link_libraries (
+      sawSensablePhantom
+      ${SENSABLE_LIBRARIES}
+      ${sawControllers_LIBRARIES}
+      ${REQUIRED_CISST_LIBRARIES})
 
     # Install target for headers and library
     install (DIRECTORY
-             "${sawSensablePhantom_SOURCE_DIR}/include/sawSensablePhantom"
-             DESTINATION include
-             COMPONENT sawSensablePhantom-dev)
+      "${sawSensablePhantom_SOURCE_DIR}/include/sawSensablePhantom"
+      DESTINATION include
+      COMPONENT sawSensablePhantom-dev)
 
     install (TARGETS sawSensablePhantom COMPONENT sawSensablePhantom
-             RUNTIME DESTINATION bin
-             LIBRARY DESTINATION lib
-             ARCHIVE DESTINATION lib)
+      RUNTIME DESTINATION bin
+      LIBRARY DESTINATION lib
+      ARCHIVE DESTINATION lib)
 
   else ()
     message ("Information: code in ${CMAKE_CURRENT_SOURCE_DIR} requires Sensable.")
   endif ()
 
-else (cisst_FOUND_AS_REQUIRED)
+else (cisst_FOUND)
   message ("Information: code in ${CMAKE_CURRENT_SOURCE_DIR} will not be compiled, it requires ${REQUIRED_CISST_LIBRARIES}")
-endif (cisst_FOUND_AS_REQUIRED)
+endif (cisst_FOUND)

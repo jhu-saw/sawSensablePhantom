@@ -1,5 +1,5 @@
 #
-# (C) Copyright 2017-2024 Johns Hopkins University (JHU), All Rights Reserved.
+# (C) Copyright 2017-2026 Johns Hopkins University (JHU), All Rights Reserved.
 #
 # --- begin cisst license - do not edit ---
 #
@@ -49,15 +49,11 @@ set (REQUIRED_CISST_LIBRARIES
   cisstMultiTask
   cisstMultiTaskQt
   cisstParameterTypes
-  cisstParameterTypesQt
-  cisstQt)
+  cisstParameterTypesQt)
 
-find_package (cisst 1.2.1 REQUIRED ${REQUIRED_CISST_LIBRARIES})
+find_package (cisst 1.2.1 REQUIRED COMPONENTS ${REQUIRED_CISST_LIBRARIES})
 
-if (cisst_FOUND_AS_REQUIRED)
-
-  # load cisst configuration
-  include (${CISST_USE_FILE})
+if (cisst_FOUND)
 
   # set paths
   cisst_set_output_path ()
@@ -83,10 +79,8 @@ if (cisst_FOUND_AS_REQUIRED)
     add_executable (sensable_phantom src/sensable_phantom.cpp)
     target_link_libraries (sensable_phantom
       ${sawSensablePhantom_LIBRARIES}
-      ${catkin_LIBRARIES})
-
-    # link against cisst libraries (and dependencies)
-    cisst_target_link_libraries (sensable_phantom ${REQUIRED_CISST_LIBRARIES})
+      ${catkin_LIBRARIES}
+      ${cisst_LIBRARIES})
 
     install (TARGETS sensable_phantom
       LIBRARY DESTINATION lib/${PROJECT_NAME}
@@ -116,4 +110,4 @@ if (cisst_FOUND_AS_REQUIRED)
     message ("Information: code in ${CMAKE_CURRENT_SOURCE_DIR} will not be compiled, it requires sawSensablePhantom")
   endif (sawSensablePhantom_FOUND)
 
-endif (cisst_FOUND_AS_REQUIRED)
+endif (cisst_FOUND)

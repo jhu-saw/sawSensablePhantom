@@ -1,5 +1,5 @@
 #
-# (C) Copyright 2017-2024 Johns Hopkins University (JHU), All Rights Reserved.
+# (C) Copyright 2017-2026 Johns Hopkins University (JHU), All Rights Reserved.
 #
 # --- begin cisst license - do not edit ---
 #
@@ -27,10 +27,7 @@ set (REQUIRED_CISST_LIBRARIES
 # find cisst and make sure the required libraries have been compiled
 find_package (cisst 1.2.1 REQUIRED ${REQUIRED_CISST_LIBRARIES})
 
-if (cisst_FOUND_AS_REQUIRED)
-
-  # load cisst configuration
-  include (${CISST_USE_FILE})
+if (cisst_FOUND)
 
   # catkin/ROS paths
   cisst_is_catkin_build (sawSensablePhantomIGTL_IS_CATKIN_BUILT)
@@ -56,13 +53,10 @@ if (cisst_FOUND_AS_REQUIRED)
       ${sawSensablePhantom_LIBRARIES}
       ${sawSensablePhantomQt_LIBRARIES}
       ${sawOpenIGTLink_LIBRARIES}
-      ${QT_LIBRARIES})
-
-    # link against cisst libraries (and dependencies)
-    cisst_target_link_libraries (sawSensablePhantomQtIGTL ${REQUIRED_CISST_LIBRARIES})
+      ${cisst_LIBRARIES})
 
   else ()
-    message ("Information: code in ${CMAKE_CURRENT_SOURCE_DIR} will not be compiled, it requires sawSensablePhantom and cisstQt")
+    message ("Information: code in ${CMAKE_CURRENT_SOURCE_DIR} will not be compiled, it requires sawSensablePhantom")
   endif ()
 
-endif (cisst_FOUND_AS_REQUIRED)
+endif (cisst_FOUND)
